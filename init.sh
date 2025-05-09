@@ -28,8 +28,15 @@ function init_daloradius {
 
     [ -n "$MAIL_SMTPADDR" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTPADDR'\] = .*;/\$configValues\['CONFIG_MAIL_SMTPADDR'\] = '$MAIL_SMTPADDR';/" $DALORADIUS_CONF_PATH
     [ -n "$MAIL_PORT" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTPPORT'\] = .*;/\$configValues\['CONFIG_MAIL_SMTPPORT'\] = '$MAIL_PORT';/" $DALORADIUS_CONF_PATH
-    [ -n "$MAIL_FROM" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTPFROM'\] = .*;/\$configValues\['CONFIG_MAIL_SMTPFROM'\] = '$MAIL_FROM';/" $DALORADIUS_CONF_PATH
     [ -n "$MAIL_AUTH" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTPAUTH'\] = .*;/\$configValues\['CONFIG_MAIL_SMTPAUTH'\] = '$MAIL_AUTH';/" $DALORADIUS_CONF_PATH
+    [ -n "$MAIL_FROM" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTPFROM'\] = .*;/\$configValues\['CONFIG_MAIL_SMTPFROM'\] = '$MAIL_FROM';/" $DALORADIUS_CONF_PATH
+    [ -n "$MAIL_ENABLED" ] && sed -i "s/\$configValues\['CONFIG_MAIL_ENABLED'\] = .*;/\$configValues\['CONFIG_MAIL_ENABLED'\] = '$MAIL_ENABLED';/" $DALORADIUS_CONF_PATH
+    [ -n "$MAIL_SMTP_SECURITY" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTP_SECURITY'\] = .*;/\$configValues\['CONFIG_MAIL_SMTP_SECURITY'\] = '$MAIL_SMTP_SECURITY';/" $DALORADIUS_CONF_PATH
+    [ -n "$MAIL_SMTP_SENDER_NAME" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTP_SENDER_NAME'\] = .*;/\$configValues\['CONFIG_MAIL_SMTP_SENDER_NAME'\] = '$MAIL_SMTP_SENDER_NAME';/" $DALORADIUS_CONF_PATH
+    [ -n "$MAIL_SMTP_SUBJECT_PREFIX" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTP_SUBJECT_PREFIX'\] = .*;/\$configValues\['CONFIG_MAIL_SMTP_SUBJECT_PREFIX'\] = '$MAIL_SMTP_SUBJECT_PREFIX';/" $DALORADIUS_CONF_PATH
+    [ -n "$MAIL_SMTP_USERNAME" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTP_USERNAME'\] = .*;/\$configValues\['CONFIG_MAIL_SMTP_USERNAME'\] = '$MAIL_SMTP_USERNAME';/" $DALORADIUS_CONF_PATH
+    [ -n "$MAIL_SMTP_PASSWORD" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTP_PASSWORD'\] = .*;/\$configValues\['CONFIG_MAIL_SMTP_PASSWORD'\] = '$MAIL_SMTP_PASSWORD';/" $DALORADIUS_CONF_PATH
+    [ -n "$USER_VPN_SERVER" ] && sed -i "s/\$configValues\['CONFIG_USER_VPN_SERVER'\] = .*;/\$configValues\['CONFIG_USER_VPN_SERVER'\] = '$USER_VPN_SERVER';/" $DALORADIUS_CONF_PATH
     sed -i "s/\$configValues\['CONFIG_LOG_FILE'\] = .*;/\$configValues\['CONFIG_LOG_FILE'\] = '\/tmp\/daloradius.log';/" $DALORADIUS_CONF_PATH
 
     echo "daloRADIUS initialization completed."

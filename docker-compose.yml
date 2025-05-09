@@ -33,8 +33,8 @@ services:
       - MYSQL_PASSWORD=radiusdbpw
       # Optional settings
       - DEFAULT_CLIENT_SECRET=testing123
-    # volumes:
-    #   - ./data/freeradius:/data
+#    volumes:
+#      - ./data/freeradius:/data
     # If you want to disable debug output, remove the command parameter
     command: -X
 
@@ -47,7 +47,7 @@ services:
       - radius-mysql
     ports:
       - '80:80'
-      - '8000:8000'
+      - '801:8000'
     environment:
       - MYSQL_HOST=radius-mysql
       - MYSQL_PORT=3306
@@ -57,10 +57,17 @@ services:
       # Optional Settings:
       - DEFAULT_CLIENT_SECRET=testing123
       - DEFAULT_FREERADIUS_SERVER=radius
-      - MAIL_SMTPADDR=127.0.0.1
-      - MAIL_PORT=25
-      - MAIL_FROM=root@daloradius.xdsl.by
-      - MAIL_AUTH=
+      - MAIL_SMTPADDR=xxxx
+      - MAIL_PORT=465
+      - MAIL_AUTH=login
+      - MAIL_FROM=xxxx
+      - MAIL_ENABLED=yes
+      - MAIL_SMTP_SECURITY=ssl
+      - MAIL_SMTP_SENDER_NAME=Vpn Connect System
+      - MAIL_SMTP_SUBJECT_PREFIX=[VpnSystem]
+      - MAIL_SMTP_USERNAME=xxxx
+      - MAIL_SMTP_PASSWORD=xxxxx
+      - USER_VPN_SERVER=xxxx
 
     volumes:
       - ./data/daloradius:/data
