@@ -130,7 +130,7 @@
     // init nested condition 2
     $nested_condition2 = array();
     if (!empty($username)) {
-        $arr = array( "username", "firstname", "lastname", "homephone", "workphone", "mobilephone" );
+        $arr = array( "username", "firstname", "lastname", "homephone", "workphone", "mobilephone", "email" );
         $value_prefix = $dbSocket->escapeSimple($username);
         foreach ($arr as $field_name) {
             $nested_condition2[] = sprintf("ui.%s LIKE '%%%s%%'", $field_name, $value_prefix);
