@@ -46,7 +46,7 @@ services:
       - radius
       - radius-mysql
     ports:
-      - '80:80'
+      #- '80:80'
       - '801:8000'
     environment:
       - MYSQL_HOST=radius-mysql
