@@ -27,7 +27,7 @@ rm -rf data/mysql
 rm -f data/daloradius/.db_init_done data/daloradius/.init_done
 mkdir -p data/mysql data/daloradius
 
-docker compose up -d --build
+docker compose up -d --build radius-web
 
 echo ""
 echo "Waiting for services to start..."
