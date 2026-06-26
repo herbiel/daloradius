@@ -47,25 +47,21 @@ function init_daloradius {
 }
 
 function init_database {
-    mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE $MYSQL_DATABASE;"
-    mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE USER '$MYSQL_USER'@'localhost' IDENTIFIED BY '$MYSQL_PASSWORD';"
-    mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'localhost'";
+    mysql -h "$MYSQL_HOST" -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;"
+    mysql -h "$MYSQL_HOST" -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';"
+    mysql -h "$MYSQL_HOST" -u root -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';"
+    mysql -h "$MYSQL_HOST" -u root -p"$MYSQL_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;"
     mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < $DALORADIUS_PATH/contrib/db/mariadb-daloradius.sql
     echo "Database initialization for daloRADIUS completed."
 }
 
 echo "Starting daloRADIUS..."
 
+# Always sync daloradius.conf.php from environment (e.g. after .env password changes).
+init_daloradius
+
 INIT_LOCK=/data/.init_done
-if test -f "$INIT_LOCK"; then
-    #
-    if ! test -f "$DALORADIUS_CONF_PATH" || ! test -s "$DALORADIUS_CONF_PATH"; then
-        echo "Init lock file exists but config file does not exist or is 0 bytes, performing initial setup of daloRADIUS."
-        init_daloradius
-    fi
-    echo "Init lock file exists and config file exists, skipping initial setup of daloRADIUS."
-else
-    init_daloradius
+if ! test -f "$INIT_LOCK"; then
     date > $INIT_LOCK
 fi
 
