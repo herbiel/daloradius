@@ -98,6 +98,7 @@ $configValues['CONFIG_MAIL_SMTP_SENDER_NAME'] = 'daloRADIUS Mailer';
 $configValues['CONFIG_MAIL_SMTP_SUBJECT_PREFIX'] = '[daloRADIUS]';
 $configValues['CONFIG_MAIL_SMTP_USERNAME'] = '';
 $configValues['CONFIG_MAIL_SMTP_PASSWORD'] = '';
+$configValues['CONFIG_MAIL_BODY_NOTE'] = '';
 $configValues['CONFIG_DASHBOARD_DALO_SECRETKEY'] = 'sillykey';
 $configValues['CONFIG_DASHBOARD_DALO_DEBUG'] = '1';
 $configValues['CONFIG_DASHBOARD_DALO_DELAYSOFT'] = '5';

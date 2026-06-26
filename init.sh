@@ -36,6 +36,10 @@ function init_daloradius {
     [ -n "$MAIL_SMTP_SUBJECT_PREFIX" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTP_SUBJECT_PREFIX'\] = .*;/\$configValues\['CONFIG_MAIL_SMTP_SUBJECT_PREFIX'\] = '$MAIL_SMTP_SUBJECT_PREFIX';/" $DALORADIUS_CONF_PATH
     [ -n "$MAIL_SMTP_USERNAME" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTP_USERNAME'\] = .*;/\$configValues\['CONFIG_MAIL_SMTP_USERNAME'\] = '$MAIL_SMTP_USERNAME';/" $DALORADIUS_CONF_PATH
     [ -n "$MAIL_SMTP_PASSWORD" ] && sed -i "s/\$configValues\['CONFIG_MAIL_SMTP_PASSWORD'\] = .*;/\$configValues\['CONFIG_MAIL_SMTP_PASSWORD'\] = '$MAIL_SMTP_PASSWORD';/" $DALORADIUS_CONF_PATH
+    if [ -n "$MAIL_BODY_NOTE" ]; then
+        escaped_note=$(printf '%s' "$MAIL_BODY_NOTE" | sed "s/'/'\\\\''/g")
+        sed -i "s/\$configValues\['CONFIG_MAIL_BODY_NOTE'\] = .*;/\$configValues['CONFIG_MAIL_BODY_NOTE'] = '${escaped_note}';/" $DALORADIUS_CONF_PATH
+    fi
     [ -n "$USER_VPN_SERVER" ] && sed -i "s/\$configValues\['CONFIG_USER_VPN_SERVER'\] = .*;/\$configValues\['CONFIG_USER_VPN_SERVER'\] = '$USER_VPN_SERVER';/" $DALORADIUS_CONF_PATH
     sed -i "s/\$configValues\['CONFIG_LOG_FILE'\] = .*;/\$configValues\['CONFIG_LOG_FILE'\] = '\/tmp\/daloradius.log';/" $DALORADIUS_CONF_PATH
 

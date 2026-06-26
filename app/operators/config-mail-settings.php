@@ -149,6 +149,12 @@
                 $configValues['CONFIG_MAIL_SMTP_PASSWORD'] = "";
             }
 
+            if (array_key_exists('CONFIG_MAIL_BODY_NOTE', $_POST)) {
+                $configValues['CONFIG_MAIL_BODY_NOTE'] = trim($_POST['CONFIG_MAIL_BODY_NOTE']);
+            } else {
+                $configValues['CONFIG_MAIL_BODY_NOTE'] = "";
+            }
+
             // display message
             if (count($invalid_input) > 0) {
                 $failureMsg = sprintf("Invalid input: [%s]", implode(", ", array_values($invalid_input)));
@@ -298,6 +304,14 @@
         "pattern" => trim(SUBJECT_PREFIX_REGEX, "/"),
         "title" => "allowed letters, numbers, spaces, and square brackets",
         "tooltipText" => "A prefix for the email subjects",
+    );
+
+    $input_descriptors1[] = array(
+        "type" => "textarea",
+        "caption" => "Email body note",
+        "name" => 'CONFIG_MAIL_BODY_NOTE',
+        "content" => $configValues['CONFIG_MAIL_BODY_NOTE'] ?? "",
+        "tooltipText" => "Optional note appended to all outgoing emails. Line breaks and basic HTML are supported.",
     );
 
 

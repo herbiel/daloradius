@@ -27,6 +27,7 @@ if (strpos($_SERVER['PHP_SELF'], '/common/includes/mail.php') !== false) {
 }
 
 include_once 'config_read.php';
+include_once 'mail_body_note.php';
 
 // Include PHPMailer classes
 include implode(DIRECTORY_SEPARATOR, [ $configValues['COMMON_LIBRARY'], 'phpmailer', 'Exception.php' ]);
@@ -70,7 +71,7 @@ function send_email($config_values, $recipient_email_address, $recipient_name, $
         // Set email content
         $mail->isHTML(true);
         $mail->Subject = $subject;
-        $mail->Body = $body;
+        $mail->Body = append_mail_body_note($config_values, $body);
 
         if (is_array($attachment) && array_key_exists('content', $attachment) && array_key_exists('filename', $attachment) ) {
             $mail->addStringAttachment($attachment['content'], $attachment['filename'],
