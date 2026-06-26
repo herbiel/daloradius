@@ -7,10 +7,10 @@ services:
     container_name: radius-mysql
     restart: unless-stopped
     environment:
-      - MYSQL_DATABASE=radius
-      - MYSQL_USER=radius
-      - MYSQL_PASSWORD=radiusdbpw
-      - MYSQL_ROOT_PASSWORD=radiusrootdbpw
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     volumes:
       - "./data/mysql:/var/lib/mysql"
 
@@ -20,19 +20,18 @@ services:
       context: .
       dockerfile: Dockerfile-freeradius
     restart: unless-stopped
-    depends_on: 
+    depends_on:
       - radius-mysql
     ports:
-      - '1812:1812/udp'
-      - '1813:1813/udp'
+      - '${RADIUS_AUTH_PORT}:1812/udp'
+      - '${RADIUS_ACCT_PORT}:1813/udp'
     environment:
-      - MYSQL_HOST=radius-mysql
-      - MYSQL_PORT=3306
-      - MYSQL_DATABASE=radius
-      - MYSQL_USER=radius
-      - MYSQL_PASSWORD=radiusdbpw
-      # Optional settings
-      - DEFAULT_CLIENT_SECRET=testing123
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - DEFAULT_CLIENT_SECRET=${DEFAULT_CLIENT_SECRET}
 #    volumes:
 #      - ./data/freeradius:/data
     # If you want to disable debug output, remove the command parameter
@@ -47,27 +46,26 @@ services:
       - radius-mysql
     ports:
       #- '80:80'
-      - '801:8000'
+      - '${WEB_PORT}:8000'
     environment:
-      - MYSQL_HOST=radius-mysql
-      - MYSQL_PORT=3306
-      - MYSQL_DATABASE=radius
-      - MYSQL_USER=radius
-      - MYSQL_PASSWORD=radiusdbpw
-      # Optional Settings:
-      - DEFAULT_CLIENT_SECRET=testing123
-      - DEFAULT_FREERADIUS_SERVER=radius
-      - MAIL_SMTPADDR=xxxx
-      - MAIL_PORT=465
-      - MAIL_AUTH=login
-      - MAIL_FROM=xxxx
-      - MAIL_ENABLED=yes
-      - MAIL_SMTP_SECURITY=ssl
-      - MAIL_SMTP_SENDER_NAME=Vpn Connect System
-      - MAIL_SMTP_SUBJECT_PREFIX=[VpnSystem]
-      - MAIL_SMTP_USERNAME=xxxx
-      - MAIL_SMTP_PASSWORD=xxxxx
-      - USER_VPN_SERVER=xxxx
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - DEFAULT_CLIENT_SECRET=${DEFAULT_CLIENT_SECRET}
+      - DEFAULT_FREERADIUS_SERVER=${DEFAULT_FREERADIUS_SERVER}
+      - MAIL_SMTPADDR=${MAIL_SMTPADDR}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_AUTH=${MAIL_AUTH}
+      - MAIL_FROM=${MAIL_FROM}
+      - MAIL_ENABLED=${MAIL_ENABLED}
+      - MAIL_SMTP_SECURITY=${MAIL_SMTP_SECURITY}
+      - MAIL_SMTP_SENDER_NAME=${MAIL_SMTP_SENDER_NAME}
+      - MAIL_SMTP_SUBJECT_PREFIX=${MAIL_SMTP_SUBJECT_PREFIX}
+      - MAIL_SMTP_USERNAME=${MAIL_SMTP_USERNAME}
+      - MAIL_SMTP_PASSWORD=${MAIL_SMTP_PASSWORD}
+      - USER_VPN_SERVER=${USER_VPN_SERVER}
 
     volumes:
       - ./data/daloradius:/data
