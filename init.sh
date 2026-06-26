@@ -46,12 +46,38 @@ function init_daloradius {
     echo "daloRADIUS initialization completed."
 }
 
+function wait_for_mysql() {
+    echo -n "Waiting for mysql ($MYSQL_HOST)..."
+    local attempt=0
+    while [ "$attempt" -lt 60 ]; do
+        if MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h"$MYSQL_HOST" -u root --silent 2>/dev/null; then
+            echo "ok"
+            return 0
+        fi
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+    echo "failed"
+    echo "ERROR: MySQL at $MYSQL_HOST is not reachable with MYSQL_ROOT_PASSWORD." >&2
+    return 1
+}
+
 function init_database {
-    mysql -h "$MYSQL_HOST" -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;"
-    mysql -h "$MYSQL_HOST" -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';"
-    mysql -h "$MYSQL_HOST" -u root -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';"
-    mysql -h "$MYSQL_HOST" -u root -p"$MYSQL_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;"
-    mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < $DALORADIUS_PATH/contrib/db/mariadb-daloradius.sql
+    if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
+        echo "ERROR: MYSQL_ROOT_PASSWORD is not set in the container environment." >&2
+        return 1
+    fi
+
+    export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"
+    mysql -h "$MYSQL_HOST" -u root -e "CREATE DATABASE IF NOT EXISTS \`$MYSQL_DATABASE\`;" || return 1
+    mysql -h "$MYSQL_HOST" -u root -e "CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';" || return 1
+    mysql -h "$MYSQL_HOST" -u root -e "GRANT ALL PRIVILEGES ON \`$MYSQL_DATABASE\`.* TO '$MYSQL_USER'@'%';" || return 1
+    mysql -h "$MYSQL_HOST" -u root -e "FLUSH PRIVILEGES;" || return 1
+
+    export MYSQL_PWD="$MYSQL_PASSWORD"
+    mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" "$MYSQL_DATABASE" < "$DALORADIUS_PATH/contrib/db/mariadb-daloradius.sql" || return 1
+
+    unset MYSQL_PWD
     echo "Database initialization for daloRADIUS completed."
 }
 
@@ -66,18 +92,18 @@ if ! test -f "$INIT_LOCK"; then
 fi
 
 # wait for MySQL-Server to be ready
-echo -n "Waiting for mysql ($MYSQL_HOST)..."
-while ! mysqladmin ping -h"$MYSQL_HOST" -p"$MYSQL_PASSWORD" --silent; do
-    sleep 20
-done
-echo "ok"
+wait_for_mysql || exit 1
 
 DB_LOCK=/data/.db_init_done
 if test -f "$DB_LOCK"; then
     echo "Database lock file exists, skipping initial setup of mysql database."
 else
-    init_database
-    date > $DB_LOCK
+    if init_database; then
+        date > "$DB_LOCK"
+    else
+        echo "ERROR: Database initialization failed. Remove $DB_LOCK and data/mysql/ then retry." >&2
+        exit 1
+    fi
 fi
 
 # Start Apache2 in the foreground

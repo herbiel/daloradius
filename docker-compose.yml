@@ -13,6 +13,12 @@ services:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     volumes:
       - "./data/mysql:/var/lib/mysql"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   radius:
     container_name: radius
@@ -21,7 +27,8 @@ services:
       dockerfile: Dockerfile-freeradius
     restart: unless-stopped
     depends_on:
-      - radius-mysql
+      radius-mysql:
+        condition: service_healthy
     ports:
       - '${RADIUS_AUTH_PORT}:1812/udp'
       - '${RADIUS_ACCT_PORT}:1813/udp'
@@ -42,8 +49,10 @@ services:
     container_name: radius-web
     restart: unless-stopped
     depends_on:
-      - radius
-      - radius-mysql
+      radius:
+        condition: service_started
+      radius-mysql:
+        condition: service_healthy
     ports:
       #- '80:80'
       - '${WEB_PORT}:8000'
