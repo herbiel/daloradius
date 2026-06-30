@@ -39,7 +39,9 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - DEFAULT_CLIENT_SECRET=${DEFAULT_CLIENT_SECRET}
-#    volumes:
+      - RADIUS_CERT_DIR=/opt/radius-certs
+    volumes:
+      - ${RADIUS_CERT_HOST_DIR:-/opt/radius-certs}:/opt/radius-certs:ro
 #      - ./data/freeradius:/data
     # If you want to disable debug output, remove the command parameter
     command: -X

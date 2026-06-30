@@ -56,6 +56,33 @@ function init_database {
 	echo "Database initialization for freeradius completed."
 }
 
+# Install TLS certs for PEAP/TTLS on every container start (supports ACME renew + restart).
+function sync_radius_certs {
+	CERT_SRC=${RADIUS_CERT_DIR:-/opt/radius-certs}
+	RADIUS_CERT_PATH=$RADIUS_PATH/certs
+	KEY="$CERT_SRC/privkey.pem"
+	FULLCHAIN="$CERT_SRC/fullchain.pem"
+
+	if [[ -f "$KEY" && -f "$FULLCHAIN" ]]; then
+		cat "$KEY" "$FULLCHAIN" > "$RADIUS_CERT_PATH/server.pem"
+		cp "$FULLCHAIN" "$RADIUS_CERT_PATH/ca.pem"
+		chown freerad:freerad "$RADIUS_CERT_PATH/server.pem" "$RADIUS_CERT_PATH/ca.pem"
+		chmod 640 "$RADIUS_CERT_PATH/server.pem" "$RADIUS_CERT_PATH/ca.pem"
+		echo "RADIUS TLS certificates installed from $CERT_SRC"
+	elif [[ -f "$CERT_SRC/server-combined.pem" ]]; then
+		cp "$CERT_SRC/server-combined.pem" "$RADIUS_CERT_PATH/server.pem"
+		if [[ -f "$FULLCHAIN" ]]; then
+			cp "$FULLCHAIN" "$RADIUS_CERT_PATH/ca.pem"
+		fi
+		chown freerad:freerad "$RADIUS_CERT_PATH/server.pem"
+		chmod 640 "$RADIUS_CERT_PATH/server.pem"
+		[[ -f "$RADIUS_CERT_PATH/ca.pem" ]] && chown freerad:freerad "$RADIUS_CERT_PATH/ca.pem" && chmod 640 "$RADIUS_CERT_PATH/ca.pem"
+		echo "RADIUS TLS certificates installed from $CERT_SRC/server-combined.pem"
+	else
+		echo "No custom TLS certs in $CERT_SRC; using image defaults."
+	fi
+}
+
 echo "Starting freeradius..."
 
 # wait for MySQL-Server to be ready
@@ -79,6 +106,8 @@ else
 	init_database
 	date > $DB_LOCK
 fi
+
+sync_radius_certs
 
 # Start freeradius in the foreground and in debug mode
 exec freeradius -f "$@"
