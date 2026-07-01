@@ -59,13 +59,21 @@ function init_database {
 # Applied on every container start so WiFi (PEAP) is not reset to MD5 after rebuild/restart.
 function configure_eap {
 	EAP_TYPE=${RADIUS_DEFAULT_EAP_TYPE:-peap}
+	EAP_INNER_TYPE=${RADIUS_PEAP_INNER_EAP_TYPE:-mschapv2}
 	EAP_CONF=$RADIUS_PATH/mods-available/eap
+
+	# Outer default only (first occurrence). Nested peap/ttls blocks have their own default_eap_type.
 	if grep -qE '^\s*default_eap_type\s*=' "$EAP_CONF"; then
-		sed -i "s/^\s*default_eap_type\s*=.*/\tdefault_eap_type = $EAP_TYPE/" "$EAP_CONF"
-		echo "EAP default_eap_type set to $EAP_TYPE"
-	else
-		echo "WARNING: default_eap_type not found in $EAP_CONF"
+		sed -i '0,/^\s*default_eap_type\s*=/s/^\s*default_eap_type\s*=.*/\tdefault_eap_type = '"$EAP_TYPE"'/' "$EAP_CONF"
+		echo "EAP outer default_eap_type set to $EAP_TYPE"
 	fi
+
+	# PEAP inner tunnel must authenticate with mschapv2/pap — never "peap".
+	if grep -qE '^\s*peap\s*\{' "$EAP_CONF"; then
+		sed -i '/^\s*peap\s*{/,/^\s*\}/ s/^\s*default_eap_type\s*=.*/\t\tdefault_eap_type = '"$EAP_INNER_TYPE"'/' "$EAP_CONF"
+		echo "PEAP inner default_eap_type set to $EAP_INNER_TYPE"
+	fi
+
 	sed -i 's|use_tunneled_reply = no|use_tunneled_reply = yes|' "$EAP_CONF"
 }
 
