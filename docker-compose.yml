@@ -40,6 +40,7 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - DEFAULT_CLIENT_SECRET=${DEFAULT_CLIENT_SECRET}
       - RADIUS_CERT_DIR=/opt/radius-certs
+      - RADIUS_DEFAULT_EAP_TYPE=${RADIUS_DEFAULT_EAP_TYPE:-peap}
     volumes:
       - ${RADIUS_CERT_HOST_DIR:-/opt/radius-certs}:/opt/radius-certs:ro
 #      - ./data/freeradius:/data

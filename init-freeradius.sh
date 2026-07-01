@@ -56,6 +56,19 @@ function init_database {
 	echo "Database initialization for freeradius completed."
 }
 
+# Applied on every container start so WiFi (PEAP) is not reset to MD5 after rebuild/restart.
+function configure_eap {
+	EAP_TYPE=${RADIUS_DEFAULT_EAP_TYPE:-peap}
+	EAP_CONF=$RADIUS_PATH/mods-available/eap
+	if grep -qE '^\s*default_eap_type\s*=' "$EAP_CONF"; then
+		sed -i "s/^\s*default_eap_type\s*=.*/\tdefault_eap_type = $EAP_TYPE/" "$EAP_CONF"
+		echo "EAP default_eap_type set to $EAP_TYPE"
+	else
+		echo "WARNING: default_eap_type not found in $EAP_CONF"
+	fi
+	sed -i 's|use_tunneled_reply = no|use_tunneled_reply = yes|' "$EAP_CONF"
+}
+
 # Install TLS certs for PEAP/TTLS on every container start (supports ACME renew + restart).
 function sync_radius_certs {
 	CERT_SRC=${RADIUS_CERT_DIR:-/opt/radius-certs}
@@ -107,6 +120,7 @@ else
 	date > $DB_LOCK
 fi
 
+configure_eap
 sync_radius_certs
 
 # Start freeradius in the foreground and in debug mode
