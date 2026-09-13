@@ -73,9 +73,31 @@ function send_email($config_values, $recipient_email_address, $recipient_name, $
         $mail->Subject = $subject;
         $mail->Body = append_mail_body_note($config_values, $body);
 
-        if (is_array($attachment) && array_key_exists('content', $attachment) && array_key_exists('filename', $attachment) ) {
-            $mail->addStringAttachment($attachment['content'], $attachment['filename'],
-                                       PHPMailer\PHPMailer\PHPMailer::ENCODING_BASE64, 'application/pdf', 'attachment');
+        if (is_array($attachment) && !empty($attachment)) {
+            // Check if it is a single attachment associative array or a list of attachments
+            $attachments_list = (isset($attachment['content']) && isset($attachment['filename'])) ? array($attachment) : $attachment;
+
+            foreach ($attachments_list as $att) {
+                if (is_array($att) && isset($att['content']) && isset($att['filename'])) {
+                    $filename = $att['filename'];
+                    $content = $att['content'];
+                    $mimetype = $att['mimetype'] ?? ($att['type'] ?? '');
+
+                    if (empty($mimetype)) {
+                        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                        if ($ext === 'pdf') {
+                            $mimetype = 'application/pdf';
+                        } else if ($ext === 'ovpn') {
+                            $mimetype = 'application/x-openvpn-profile';
+                        } else {
+                            $mimetype = 'application/octet-stream';
+                        }
+                    }
+
+                    $mail->addStringAttachment($content, $filename,
+                                               PHPMailer\PHPMailer\PHPMailer::ENCODING_BASE64, $mimetype, 'attachment');
+                }
+            }
         }
 
         // Send the email

@@ -322,7 +322,8 @@
                                 . '<a target="_blank" href="include/common/notifications.php?action=preview">Preview</a>';
 
                     if (strtolower($configValues['CONFIG_MAIL_ENABLED']) == "yes") {
-                        $successMsg .= ' or <a href="include/common/notifications.php?action=email">Send</a>';
+                        $successMsg .= ' or <a href="include/common/notifications.php?action=email">Send Welcome Letter</a>';
+                        $successMsg .= sprintf(' | <a href="javascript:void(0);" onclick="sendSingleUserMail(\'%s\', \'returnMessages\');" class="btn btn-sm btn-primary text-white ms-2"><i class="fa fa-envelope"></i> Send VPN Profile &amp; Credentials</a>', $u_enc);
                     }
 
                     $_SESSION['notification'] = array( 'username' => $username, 'type' => 'user-welcome' );
@@ -351,6 +352,7 @@
         "static/js/dynamic_attributes.js",
         "static/js/ajaxGeneric.js",
         "static/js/productive_funcs.js",
+        "static/js/pages_common.js",
     );
 
     $title = t('Intro','mngnew.php');
@@ -361,6 +363,7 @@
     print_title_and_help($title, $help);
 
     include_once('include/management/actionMessages.php');
+    echo '<div id="returnMessages"></div>';
 
     if (!isset($successMsg)) {
 

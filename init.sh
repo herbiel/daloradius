@@ -41,6 +41,16 @@ function init_daloradius {
         sed -i "s/\$configValues\['CONFIG_MAIL_BODY_NOTE'\] = .*;/\$configValues['CONFIG_MAIL_BODY_NOTE'] = '${escaped_note}';/" $DALORADIUS_CONF_PATH
     fi
     [ -n "$USER_VPN_SERVER" ] && sed -i "s/\$configValues\['CONFIG_USER_VPN_SERVER'\] = .*;/\$configValues\['CONFIG_USER_VPN_SERVER'\] = '$USER_VPN_SERVER';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_ENABLED" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_ENABLED'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_ENABLED'\] = '$OPENVPN_AS_ENABLED';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_HOST" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_HOST'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_HOST'\] = '$OPENVPN_AS_HOST';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_MODE" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_MODE'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_MODE'\] = '$OPENVPN_AS_MODE';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_API_PORT" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_API_PORT'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_API_PORT'\] = '$OPENVPN_AS_API_PORT';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_API_TOKEN" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_API_TOKEN'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_API_TOKEN'\] = '$OPENVPN_AS_API_TOKEN';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_PROFILE_TYPE" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_PROFILE_TYPE'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_PROFILE_TYPE'\] = '$OPENVPN_AS_PROFILE_TYPE';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_DEFAULT_GROUP" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_DEFAULT_GROUP'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_DEFAULT_GROUP'\] = '$OPENVPN_AS_DEFAULT_GROUP';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_SSH_USER" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_SSH_USER'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_SSH_USER'\] = '$OPENVPN_AS_SSH_USER';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_SSH_PORT" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_SSH_PORT'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_SSH_PORT'\] = '$OPENVPN_AS_SSH_PORT';/" $DALORADIUS_CONF_PATH
+    [ -n "$OPENVPN_AS_SSH_KEY" ] && sed -i "s/\$configValues\['CONFIG_OPENVPN_AS_SSH_KEY'\] = .*;/\$configValues\['CONFIG_OPENVPN_AS_SSH_KEY'\] = '$OPENVPN_AS_SSH_KEY';/" $DALORADIUS_CONF_PATH
     sed -i "s/\$configValues\['CONFIG_LOG_FILE'\] = .*;/\$configValues\['CONFIG_LOG_FILE'\] = '\/tmp\/daloradius.log';/" $DALORADIUS_CONF_PATH
 
     echo "daloRADIUS initialization completed."

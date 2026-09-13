@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenVPN AS API Bridge for daloRADIUS
+After=network.target openvpnas.service
+
+[Service]
+Type=simple
+User=root
+Environment=AS_API_PORT=9443
+Environment=AS_API_TOKEN=tangbull-openvpn-as-secret-key
+ExecStart=/usr/bin/python3 /usr/local/openvpn_as/scripts/as_api_bridge.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -114,6 +114,16 @@ $configValues['CONFIG_USER_TRAFFIC_MONITOR_ENABLED'] = 'no';
 $configValues['CONFIG_USER_TRAFFIC_MONITOR_HARDLIMIT'] = '1073741824';
 $configValues['CONFIG_USER_TRAFFIC_MONITOR_SOFTLIMIT'] = '536870912';
 $configValues['CONFIG_USER_VPN_SERVER'] = 'vpn.company.com';
+$configValues['CONFIG_OPENVPN_AS_ENABLED'] = 'yes';
+$configValues['CONFIG_OPENVPN_AS_HOST'] = '192.168.50.113';
+$configValues['CONFIG_OPENVPN_AS_MODE'] = 'api';
+$configValues['CONFIG_OPENVPN_AS_API_PORT'] = '9443';
+$configValues['CONFIG_OPENVPN_AS_API_TOKEN'] = 'tangbull-openvpn-as-secret-key';
+$configValues['CONFIG_OPENVPN_AS_PROFILE_TYPE'] = 'userlogin';
+$configValues['CONFIG_OPENVPN_AS_DEFAULT_GROUP'] = '';
+$configValues['CONFIG_OPENVPN_AS_SSH_USER'] = 'root';
+$configValues['CONFIG_OPENVPN_AS_SSH_PORT'] = '22';
+$configValues['CONFIG_OPENVPN_AS_SSH_KEY'] = '';
 
 
 

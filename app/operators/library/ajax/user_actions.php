@@ -28,6 +28,7 @@
 include_once('../checklogin.php');
 include_once('../../../common/includes/config_read.php');
 include_once('../../../common/includes/mail.php');
+include_once('../../../common/includes/openvpn_as.php');
 // name of the group of disabled users
 $disabled_groupname = 'daloRADIUS-Disabled-Users';
 
@@ -178,37 +179,98 @@ if (array_key_exists('username', $_GET) && isset($_GET['username']) &&
             // Execute the SQL query
             $res = $dbSocket->query($sql);
 
+            $as_configured = openvpn_as_is_configured($configValues);
+            $mail_results = array();
+            $all_success = true;
+            $user_count = 0;
+
             // Iterate through the results
             while ($row = $res->fetchRow()) {
-                // Get the recipient's email address and username
-                $recipient_email_address = $row[2]; // Email of the user
-                $recipient_name = $row[0]; // Username of the user
+                $user_count++;
+                $recipient_username = $row[0];
+                $recipient_password = $row[1];
+                $recipient_email_address = trim($row[2] ?? '');
+                $recipient_firstname = $row[3] ?? '';
+                $recipient_lastname = $row[4] ?? '';
+                $recipient_name = trim("$recipient_firstname $recipient_lastname") ?: $recipient_username;
+
+                if (empty($recipient_email_address)) {
+                    $all_success = false;
+                    $mail_results[] = sprintf('User <strong>%s</strong>: Skipped (no email address found).', htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8'));
+                    continue;
+                }
+
+                $attachment = array();
+                $as_info = '';
+
+                // If OpenVPN AS integration is configured, synchronize user and get .ovpn profile
+                if ($as_configured) {
+                    $profile_type = $configValues['CONFIG_OPENVPN_AS_PROFILE_TYPE'] ?? 'userlogin';
+                    list($as_ok, $as_prof_data, $as_msg) = openvpn_as_create_and_fetch_profile($configValues, $recipient_username, $profile_type);
+
+                    if ($as_ok && !empty($as_prof_data)) {
+                        $attachment = array(
+                            'filename' => sprintf('%s.ovpn', $recipient_username),
+                            'content'  => $as_prof_data,
+                            'mimetype' => 'application/x-openvpn-profile',
+                        );
+                        $as_info .= ' [Profile attached]';
+                    } else {
+                        $as_info .= sprintf(' [OpenVPN AS Warning: %s]', htmlspecialchars($as_msg, ENT_QUOTES, 'UTF-8'));
+                    }
+                }
 
                 // Set the subject and body of the email
-                $subject = 'VPN Credentials'; // Subject of the email
-                $body = sprintf(
-                    '<b>VPN credential</b><br>Hello, %s %s!<br>Your login is: %s<br>Your password is: %s<br>VPN Server is: %s<br><br>Best regards, Admin',
-                    $row[3], // First name of the user
-                    $row[4], // Last name of the user
-                    $row[0], // Username
-                    $row[1],  // Password
-                    $configValues['CONFIG_USER_VPN_SERVER']  // VPN Server name/IP
-                );
+                $subject = 'VPN Credentials & Configuration';
+                $vpn_server = $configValues['CONFIG_USER_VPN_SERVER'] ?? ($configValues['CONFIG_OPENVPN_AS_HOST'] ?? 'VPN Server');
+                $has_attachment = !empty($attachment);
 
-                // Prepare an empty array for email attachments, if any
-                $attachment = array();
+                $profile_notice = '';
+                if ($has_attachment) {
+                    $profile_notice = sprintf(
+                        '<p><b>OpenVPN Profile:</b><br>' .
+                        'Your OpenVPN client profile (<code>%s.ovpn</code>) is attached to this email.<br>' .
+                        'Please import this profile into OpenVPN Connect (or your OpenVPN client), then connect using your credentials above.</p>',
+                        htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8')
+                    );
+                }
+
+                $body = sprintf(
+                    '<h3>VPN Account Information</h3>' .
+                    '<p>Hello, %s %s!</p>' .
+                    '<p>Your VPN account credentials are as follows:</p>' .
+                    '<ul>' .
+                    '<li><b>Username:</b> %s</li>' .
+                    '<li><b>Password:</b> %s</li>' .
+                    '<li><b>VPN Server:</b> %s</li>' .
+                    '</ul>' .
+                    '%s' .
+                    '<br><p>Best regards,<br>Network Administration Team</p>',
+                    htmlspecialchars($recipient_firstname, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($recipient_lastname, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($recipient_password, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($vpn_server, ENT_QUOTES, 'UTF-8'),
+                    $profile_notice
+                );
 
                 // Send the email and capture the success status and message
                 list($success, $status) = send_email($configValues, $recipient_email_address, $recipient_name, $subject, $body, $attachment);
 
-                // Determine the class and message based on whether the email was sent successfully
                 if ($success) {
-                    $class = "success"; // Class for successful email sending
-                    $message = $status; // Message indicating success status
+                    $mail_results[] = sprintf('User <strong>%s</strong>: %s%s', htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8'), $status, $as_info);
                 } else {
-                    $class = "danger"; // Class for failed email sending
-                    $message = $status; // Message indicating failure status
+                    $all_success = false;
+                    $mail_results[] = sprintf('User <strong>%s</strong> failed: %s%s', htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8'), $status, $as_info);
                 }
+            }
+
+            if ($user_count === 0) {
+                $class = "warning";
+                $message = "No matching user records found in database.";
+            } else {
+                $class = $all_success ? "success" : "danger";
+                $message = implode('<br>', $mail_results);
             }
             break; // End of the case
 //=======================

@@ -413,6 +413,27 @@ function mailCheckbox(formName,pageDst) {
     return false;
 }
 
+/***********************************************************************
+ * sendSingleUserMail
+ * submits an ajax request to send email (with VPN profile) to a single user
+ *
+ * username     - target username
+ * divContainer - container ID to display return message (default: returnMessages)
+ ***********************************************************************/
+function sendSingleUserMail(username, divContainer) {
+    if (!username) {
+        alert("Username is required");
+        return false;
+    }
+    divContainer = divContainer || "returnMessages";
+    if (confirm("Send VPN credentials and configuration profile to user [" + username + "]?")) {
+        var strParam = "username[]=" + encodeURIComponent(username);
+        ajaxGeneric("library/ajax/user_actions.php", "userMail", divContainer, strParam);
+        return true;
+    }
+    return false;
+}
+
 
 
 
