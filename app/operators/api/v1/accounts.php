@@ -373,15 +373,96 @@ function handle_add_account($dbSocket, $configValues, $data, $operator, $valid_p
         $addedBillingInfo = add_user_billing_info($dbSocket, $username, $billParams);
     }
 
+    // 11. Optionally synchronize user to OpenVPN AS and retrieve .ovpn profile
+    $openvpnProfile = null;
+    $openvpnStatus = null;
+    $syncVpn = isset($data['sync_vpn']) ? filter_var($data['sync_vpn'], FILTER_VALIDATE_BOOLEAN) :
+              (isset($data['fetch_profile']) ? filter_var($data['fetch_profile'], FILTER_VALIDATE_BOOLEAN) : false);
+
+    if ($syncVpn) {
+        require_once(__DIR__ . '/../../../common/includes/openvpn_as.php');
+        if (openvpn_as_is_configured($configValues)) {
+            $profileType = $data['profile_type'] ?? ($configValues['CONFIG_OPENVPN_AS_PROFILE_TYPE'] ?? 'userlogin');
+            list($as_ok, $as_prof, $as_msg) = openvpn_as_create_and_fetch_profile($configValues, $username, $profileType);
+            if ($as_ok) {
+                $openvpnProfile = $as_prof;
+                $openvpnStatus = 'ok';
+            } else {
+                $openvpnStatus = $as_msg;
+            }
+        } else {
+            $openvpnStatus = 'OpenVPN AS is not configured or disabled.';
+        }
+    }
+
+    // 12. Optionally send credential & profile email
+    $emailSent = false;
+    $sendMail = isset($data['send_mail']) ? filter_var($data['send_mail'], FILTER_VALIDATE_BOOLEAN) :
+               (isset($data['send_email']) ? filter_var($data['send_email'], FILTER_VALIDATE_BOOLEAN) : false);
+
+    if ($sendMail && !empty($userInfoParams['email'])) {
+        require_once(__DIR__ . '/../../../common/includes/mail.php');
+        require_once(__DIR__ . '/../../../common/includes/openvpn_as.php');
+
+        $attachments = array();
+        if (!empty($openvpnProfile)) {
+            $attachments[] = array(
+                'filename' => sprintf('%s.ovpn', $username),
+                'content'  => $openvpnProfile,
+                'mimetype' => 'application/x-openvpn-profile',
+            );
+        }
+
+        $vpn_server = !empty($configValues['CONFIG_OPENVPN_AS_HOST']) ? $configValues['CONFIG_OPENVPN_AS_HOST'] : (!empty($configValues['CONFIG_USER_VPN_SERVER']) ? $configValues['CONFIG_USER_VPN_SERVER'] : '192.168.50.113');
+        $portal_url = !empty($configValues['CONFIG_OPENVPN_AS_WEB_URL']) ? $configValues['CONFIG_OPENVPN_AS_WEB_URL'] : sprintf('https://%s:943/', $vpn_server);
+        $download_links = function_exists('openvpn_as_get_download_links') ? openvpn_as_get_download_links($configValues) : array();
+
+        if (function_exists('openvpn_as_build_offline_guide_html')) {
+            $guide_html = openvpn_as_build_offline_guide_html($username, $password, $vpn_server, $portal_url, $download_links);
+            $attachments[] = array(
+                'filename' => 'OpenVPN_快速使用指南及下载.html',
+                'content'  => $guide_html,
+                'mimetype' => 'text/html; charset=utf-8',
+            );
+        }
+
+        $subject = 'VPN 账号凭据与客户端配置指南 (VPN Credentials & Configuration)';
+        $body = function_exists('openvpn_as_build_email_body') ?
+            openvpn_as_build_email_body(
+                $userInfoParams['firstname'],
+                $userInfoParams['lastname'],
+                $username,
+                $password,
+                $vpn_server,
+                !empty($openvpnProfile),
+                $portal_url,
+                $download_links
+            ) : sprintf('VPN Account: %s', $username);
+
+        $recipient_name = trim(sprintf('%s %s', $userInfoParams['firstname'], $userInfoParams['lastname'])) ?: $username;
+        list($emailSent, $emailMsg) = send_email($configValues, $userInfoParams['email'], $recipient_name, $subject, $body, $attachments);
+    }
+
     // Success response
-    api_send_response(array(
+    $resp = array(
         'username'         => $username,
         'password_type'    => $passwordType,
         'attributes_count' => $attributesCount,
         'groups_count'     => $groupsCount,
         'has_user_info'    => $addedUserInfo,
         'has_billing_info' => $addedBillingInfo,
-    ), 201, sprintf('Account "%s" created successfully.', $username));
+    );
+
+    if ($openvpnProfile !== null || $openvpnStatus !== null) {
+        $resp['openvpn_profile'] = $openvpnProfile;
+        $resp['openvpn_status']  = $openvpnStatus;
+    }
+
+    if ($sendMail) {
+        $resp['email_sent'] = $emailSent;
+    }
+
+    api_send_response($resp, 201, sprintf('Account "%s" created successfully in RADIUS.', $username));
 }
 
 
