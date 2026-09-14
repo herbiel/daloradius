@@ -200,7 +200,7 @@ if (array_key_exists('username', $_GET) && isset($_GET['username']) &&
                     continue;
                 }
 
-                $attachment = array();
+                $attachments = array();
                 $as_info = '';
 
                 // If OpenVPN AS integration is configured, synchronize user and get .ovpn profile
@@ -209,7 +209,7 @@ if (array_key_exists('username', $_GET) && isset($_GET['username']) &&
                     list($as_ok, $as_prof_data, $as_msg) = openvpn_as_create_and_fetch_profile($configValues, $recipient_username, $profile_type);
 
                     if ($as_ok && !empty($as_prof_data)) {
-                        $attachment = array(
+                        $attachments[] = array(
                             'filename' => sprintf('%s.ovpn', $recipient_username),
                             'content'  => $as_prof_data,
                             'mimetype' => 'application/x-openvpn-profile',
@@ -220,42 +220,54 @@ if (array_key_exists('username', $_GET) && isset($_GET['username']) &&
                     }
                 }
 
-                // Set the subject and body of the email
-                $subject = 'VPN Credentials & Configuration';
                 $vpn_server = !empty($configValues['CONFIG_OPENVPN_AS_HOST']) ? $configValues['CONFIG_OPENVPN_AS_HOST'] : (!empty($configValues['CONFIG_USER_VPN_SERVER']) ? $configValues['CONFIG_USER_VPN_SERVER'] : '192.168.50.113');
-                $has_attachment = !empty($attachment);
+                $portal_url = !empty($configValues['CONFIG_OPENVPN_AS_WEB_URL']) ? $configValues['CONFIG_OPENVPN_AS_WEB_URL'] : sprintf('https://%s:943/', $vpn_server);
+                $has_profile = !empty($attachments);
 
-                $profile_notice = '';
-                if ($has_attachment) {
-                    $profile_notice = sprintf(
-                        '<p><b>OpenVPN Profile:</b><br>' .
-                        'Your OpenVPN client profile (<code>%s.ovpn</code>) is attached to this email.<br>' .
-                        'Please import this profile into OpenVPN Connect (or your OpenVPN client), then connect using your credentials above.</p>',
-                        htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8')
+                // Add standalone offline user guide as an additional attachment
+                if (function_exists('openvpn_as_build_offline_guide_html')) {
+                    $guide_html = openvpn_as_build_offline_guide_html($recipient_username, $recipient_password, $vpn_server, $portal_url);
+                    $attachments[] = array(
+                        'filename' => 'OpenVPN_快速使用指南及下载.html',
+                        'content'  => $guide_html,
+                        'mimetype' => 'text/html; charset=utf-8',
                     );
                 }
 
-                $body = sprintf(
-                    '<h3>VPN Account Information</h3>' .
-                    '<p>Hello, %s %s!</p>' .
-                    '<p>Your VPN account credentials are as follows:</p>' .
-                    '<ul>' .
-                    '<li><b>Username:</b> %s</li>' .
-                    '<li><b>Password:</b> %s</li>' .
-                    '<li><b>VPN Server:</b> %s</li>' .
-                    '</ul>' .
-                    '%s' .
-                    '<br><p>Best regards,<br>Network Administration Team</p>',
-                    htmlspecialchars($recipient_firstname, ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars($recipient_lastname, ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars($recipient_password, ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars($vpn_server, ENT_QUOTES, 'UTF-8'),
-                    $profile_notice
-                );
+                // Set the subject and body of the email
+                $subject = 'VPN 账号凭据与客户端配置指南 (VPN Credentials & Configuration)';
+
+                if (function_exists('openvpn_as_build_email_body')) {
+                    $body = openvpn_as_build_email_body(
+                        $recipient_firstname,
+                        $recipient_lastname,
+                        $recipient_username,
+                        $recipient_password,
+                        $vpn_server,
+                        $has_profile,
+                        $portal_url
+                    );
+                } else {
+                    $body = sprintf(
+                        '<h3>VPN Account Information</h3>' .
+                        '<p>Hello, %s %s!</p>' .
+                        '<p>Your VPN account credentials are as follows:</p>' .
+                        '<ul>' .
+                        '<li><b>Username:</b> %s</li>' .
+                        '<li><b>Password:</b> %s</li>' .
+                        '<li><b>VPN Server:</b> %s</li>' .
+                        '</ul>' .
+                        '<br><p>Best regards,<br>Network Administration Team</p>',
+                        htmlspecialchars($recipient_firstname, ENT_QUOTES, 'UTF-8'),
+                        htmlspecialchars($recipient_lastname, ENT_QUOTES, 'UTF-8'),
+                        htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8'),
+                        htmlspecialchars($recipient_password, ENT_QUOTES, 'UTF-8'),
+                        htmlspecialchars($vpn_server, ENT_QUOTES, 'UTF-8')
+                    );
+                }
 
                 // Send the email and capture the success status and message
-                list($success, $status) = send_email($configValues, $recipient_email_address, $recipient_name, $subject, $body, $attachment);
+                list($success, $status) = send_email($configValues, $recipient_email_address, $recipient_name, $subject, $body, $attachments);
 
                 if ($success) {
                     $mail_results[] = sprintf('User <strong>%s</strong>: %s%s', htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8'), $status, $as_info);
