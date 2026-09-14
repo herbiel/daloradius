@@ -43,7 +43,7 @@ function openvpn_as_is_configured($config) {
         return false;
     }
 
-    $host = $config['CONFIG_OPENVPN_AS_HOST'] ?? ($config['CONFIG_USER_VPN_SERVER'] ?? '');
+    $host = !empty($config['CONFIG_OPENVPN_AS_HOST']) ? $config['CONFIG_OPENVPN_AS_HOST'] : (!empty($config['CONFIG_USER_VPN_SERVER']) ? $config['CONFIG_USER_VPN_SERVER'] : '192.168.50.113');
     return !empty($host);
 }
 

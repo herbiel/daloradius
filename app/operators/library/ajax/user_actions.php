@@ -222,7 +222,7 @@ if (array_key_exists('username', $_GET) && isset($_GET['username']) &&
 
                 // Set the subject and body of the email
                 $subject = 'VPN Credentials & Configuration';
-                $vpn_server = $configValues['CONFIG_USER_VPN_SERVER'] ?? ($configValues['CONFIG_OPENVPN_AS_HOST'] ?? 'VPN Server');
+                $vpn_server = !empty($configValues['CONFIG_OPENVPN_AS_HOST']) ? $configValues['CONFIG_OPENVPN_AS_HOST'] : (!empty($configValues['CONFIG_USER_VPN_SERVER']) ? $configValues['CONFIG_USER_VPN_SERVER'] : '192.168.50.113');
                 $has_attachment = !empty($attachment);
 
                 $profile_notice = '';
