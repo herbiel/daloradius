@@ -257,14 +257,12 @@ if (array_key_exists('username', $_GET) && isset($_GET['username']) &&
                         '<ul>' .
                         '<li><b>Username:</b> %s</li>' .
                         '<li><b>Password:</b> %s</li>' .
-                        '<li><b>VPN Server:</b> %s</li>' .
                         '</ul>' .
                         '<br><p>Best regards,<br>Network Administration Team</p>',
                         htmlspecialchars($recipient_firstname, ENT_QUOTES, 'UTF-8'),
                         htmlspecialchars($recipient_lastname, ENT_QUOTES, 'UTF-8'),
                         htmlspecialchars($recipient_username, ENT_QUOTES, 'UTF-8'),
-                        htmlspecialchars($recipient_password, ENT_QUOTES, 'UTF-8'),
-                        htmlspecialchars($vpn_server, ENT_QUOTES, 'UTF-8')
+                        htmlspecialchars($recipient_password, ENT_QUOTES, 'UTF-8')
                     );
                 }
 

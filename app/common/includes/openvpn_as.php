@@ -392,14 +392,6 @@ function openvpn_as_build_email_body($firstname, $lastname, $username, $password
                     <td style="padding: 6px 0; color: #64748b;"><strong>登录密码：</strong></td>
                     <td style="padding: 6px 0; font-family: monospace; font-size: 15px; color: #0f172a;"><strong style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; border: 1px solid #cbd5e1;">{$safe_pass}</strong></td>
                 </tr>
-                <tr>
-                    <td style="padding: 6px 0; color: #64748b;"><strong>VPN 服务器：</strong></td>
-                    <td style="padding: 6px 0; font-family: monospace; font-size: 14px; color: #334155;">{$safe_serv}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 6px 0; color: #64748b;"><strong>Web 客户端门户：</strong></td>
-                    <td style="padding: 6px 0; font-size: 13px;"><a href="{$safe_port}" target="_blank" style="color: #2563eb; text-decoration: none;">{$safe_port}</a> <span style="color: #94a3b8; font-size: 12px;">(支持直接网页登录下载)</span></td>
-                </tr>
             </table>
         </div>
 
@@ -564,8 +556,6 @@ function openvpn_as_build_offline_guide_html($username, $password, $vpn_server, 
         <div class="card-title">🔑 您的 VPN 专属账户信息</div>
         <p style="margin: 6px 0;"><strong>用户名：</strong> <span class="badge">{$safe_user}</span></p>
         <p style="margin: 6px 0;"><strong>初始密码：</strong> <span class="badge">{$safe_pass}</span></p>
-        <p style="margin: 6px 0;"><strong>VPN 服务器：</strong> <span class="badge">{$safe_serv}</span></p>
-        <p style="margin: 6px 0;"><strong>Web 客户端门户：</strong> <a href="{$safe_port}" target="_blank">{$safe_port}</a></p>
     </div>
 
     <div class="alert-ios">
@@ -628,7 +618,7 @@ function openvpn_as_build_offline_guide_html($username, $password, $vpn_server, 
         <ul style="padding-left: 20px; margin: 0; font-size: 14px; color: #475569;">
             <li><strong>提示 Authentication Failed：</strong>请检查密码复制时是否带入多余的前后空格。</li>
             <li><strong>提示 Server Unreachable：</strong>请排查当前所连局域网是否封禁了外部 VPN 端口（UDP 1194/11940）。</li>
-            <li><strong>配置文件遗失：</strong>如配置文件丢失，可随时登录 Web 客户端门户（{$safe_port}）重新下载。</li>
+            <li><strong>配置文件遗失：</strong>如配置文件丢失，可联系系统管理员重新获取。</li>
         </ul>
     </div>
 
