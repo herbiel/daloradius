@@ -93,6 +93,8 @@ function send_email($config_values, $recipient_email_address, $recipient_name, $
     try {
         // Configure SMTP settings
         $mail->isSMTP();
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
         $mail->Host = $config_values['CONFIG_MAIL_SMTPADDR'];
         $mail->Port = $config_values['CONFIG_MAIL_SMTPPORT'];
         $mail->SMTPSecure = $config_values['CONFIG_MAIL_SMTP_SECURITY'];

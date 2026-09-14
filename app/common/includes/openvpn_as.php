@@ -368,6 +368,7 @@ function openvpn_as_build_email_body($firstname, $lastname, $username, $password
     $safe_port = htmlspecialchars($portal_url, ENT_QUOTES, 'UTF-8');
 
     $html = <<<HTML
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <div style="max-width: 680px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #2d3748; line-height: 1.6; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
     <!-- Header -->
     <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: #ffffff; padding: 24px 30px; text-align: left;">
