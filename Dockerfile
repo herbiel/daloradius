@@ -26,7 +26,8 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list \
   && sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list \
   && sed -i '/debian-security/d' /etc/apt/sources.list \
   && apt-get update \
-  && apt-get install --yes --no-install-recommends \
+  && apt-get install --yes --no-install-recommends --allow-downgrades \
+  perl-base=5.32.1-4+deb11u3 \
   ca-certificates \
   apt-utils \
   freeradius-utils \
@@ -41,14 +42,12 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list \
   php-cli \
   php-curl \
   php-mail \
-  php-dev \
   php-mail-mime \
   php-mbstring \
   php-db \
   php-mysql \
   php-zip \
   mariadb-client \
-  default-libmysqlclient-dev \
   unzip \
   wget \
   && rm -rf /var/lib/apt/lists/*
