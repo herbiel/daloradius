@@ -33,6 +33,53 @@ function fix_placeholder_text($text) {
     return trim($text);
 }
 
+/**
+ * Check if the currently logged-in operator is the super administrator ('administrator').
+ *
+ * @return bool
+ */
+function is_super_administrator() {
+    $current = $_SESSION['operator_user'] ?? '';
+    return strtolower(trim($current)) === 'administrator';
+}
+
+/**
+ * Check if the current operator is permitted to view the target user/operator's password.
+ * Only 'administrator' or the user themselves may view their own password.
+ *
+ * @param string $target_username
+ * @return bool
+ */
+function can_view_password($target_username = '') {
+    if (is_super_administrator()) {
+        return true;
+    }
+    $current = $_SESSION['operator_user'] ?? '';
+    if (!empty($target_username) && strtolower(trim($target_username)) === strtolower(trim($current))) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Mask a password if the current operator is not permitted to view it.
+ *
+ * @param string $password
+ * @param string $target_username
+ * @param string $mask
+ * @return string
+ */
+function mask_password_if_restricted($password, $target_username = '', $mask = '******') {
+    global $configValues;
+    if (!can_view_password($target_username)) {
+        return $mask;
+    }
+    if (isset($configValues['CONFIG_IFACE_PASSWORD_HIDDEN']) && strtolower($configValues['CONFIG_IFACE_PASSWORD_HIDDEN']) === 'yes') {
+        return '[Password is hidden]';
+    }
+    return $password;
+}
+
 const DEFAULT_COMMON_PROLOGUE_CSS = array(
     "static/css/bootstrap.min.css",
     "static/css/icons/bootstrap-icons.min.css",

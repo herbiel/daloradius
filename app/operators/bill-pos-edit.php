@@ -258,23 +258,29 @@
                                                                         $dbSocket->escapeSimple($ui_enableUserPortalLogin),
                                                                         $dbSocket->escapeSimple($current_datetime), $dbSocket->escapeSimple($currBy));
                 } else {
-                   // update user information table
-                   $sql = sprintf("UPDATE %s SET firstname='%s', lastname='%s', email='%s', department='%s', company='%s', workphone='%s',
-                                                 homephone='%s', mobilephone='%s', address='%s', city='%s', state='%s', country='%s',
-                                                 zip='%s', notes='%s', changeuserinfo='%s', portalloginpassword='%s', enableportallogin='%s',
-                                                 updatedate='%s', updateby='%s'
-                                    WHERE username='%s'", $configValues['CONFIG_DB_TBL_DALOUSERINFO'], $dbSocket->escapeSimple($firstname),
-                                                          $dbSocket->escapeSimple($lastname), $dbSocket->escapeSimple($email),
-                                                          $dbSocket->escapeSimple($department), $dbSocket->escapeSimple($company),
-                                                          $dbSocket->escapeSimple($workphone), $dbSocket->escapeSimple($homephone),
-                                                          $dbSocket->escapeSimple($mobilephone), $dbSocket->escapeSimple($address),
-                                                          $dbSocket->escapeSimple($city), $dbSocket->escapeSimple($state),
-                                                          $dbSocket->escapeSimple($country), $dbSocket->escapeSimple($zip),
-                                                          $dbSocket->escapeSimple($notes), $dbSocket->escapeSimple($ui_changeuserinfo),
-                                                          $dbSocket->escapeSimple($ui_PortalLoginPassword),
-                                                          $dbSocket->escapeSimple($ui_enableUserPortalLogin),
-                                                          $dbSocket->escapeSimple($current_datetime), $dbSocket->escapeSimple($currBy),
-                                                          $dbSocket->escapeSimple($username));
+                    // update user information table
+                    $portal_pwd_sql = "";
+                    if (!empty($ui_PortalLoginPassword) || (function_exists('can_view_password') && can_view_password($username))) {
+                        $portal_pwd_sql = sprintf(", changeuserinfo='%s', portalloginpassword='%s', enableportallogin='%s'",
+                                                  $dbSocket->escapeSimple($ui_changeuserinfo),
+                                                  $dbSocket->escapeSimple($ui_PortalLoginPassword),
+                                                  $dbSocket->escapeSimple($ui_enableUserPortalLogin));
+                    }
+                    $sql = sprintf("UPDATE %s SET firstname='%s', lastname='%s', email='%s', department='%s', company='%s', workphone='%s',
+                                                  homephone='%s', mobilephone='%s', address='%s', city='%s', state='%s', country='%s',
+                                                  zip='%s', notes='%s'%s,
+                                                  updatedate='%s', updateby='%s'
+                                     WHERE username='%s'", $configValues['CONFIG_DB_TBL_DALOUSERINFO'], $dbSocket->escapeSimple($firstname),
+                                                           $dbSocket->escapeSimple($lastname), $dbSocket->escapeSimple($email),
+                                                           $dbSocket->escapeSimple($department), $dbSocket->escapeSimple($company),
+                                                           $dbSocket->escapeSimple($workphone), $dbSocket->escapeSimple($homephone),
+                                                           $dbSocket->escapeSimple($mobilephone), $dbSocket->escapeSimple($address),
+                                                           $dbSocket->escapeSimple($city), $dbSocket->escapeSimple($state),
+                                                           $dbSocket->escapeSimple($country), $dbSocket->escapeSimple($zip),
+                                                           $dbSocket->escapeSimple($notes),
+                                                           $portal_pwd_sql,
+                                                           $dbSocket->escapeSimple($current_datetime), $dbSocket->escapeSimple($currBy),
+                                                           $dbSocket->escapeSimple($username));
                 }
 
                 // execute the insert/update onto userinfo
@@ -536,7 +542,7 @@ function refillSessionTraffic() {
                                         "name" => "password",
                                         "caption" => t('all','Password'),
                                         "type" => $hiddenPassword,
-                                        "value" => ((isset($user_password)) ? $user_password : ""),
+                                        "value" => ((isset($user_password)) ? (function_exists('can_view_password') && !can_view_password($username) ? "******" : $user_password) : ""),
                                         "disabled" => true,
                                         "tooltipText" => t('Tooltip','passwordTooltip')
                                      );

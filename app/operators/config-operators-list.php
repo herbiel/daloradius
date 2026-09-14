@@ -147,9 +147,7 @@
             
             list($id, $username, $auth, $fullname, $title) = $row;
             
-            if (strtolower($configValues['CONFIG_IFACE_PASSWORD_HIDDEN']) === "yes") {
-                $auth = "[Password is hidden]";
-            }
+            $auth = mask_password_if_restricted($auth, $username);
             
             // preparing checkboxes and tooltips stuff
             $tooltip = array(

@@ -244,6 +244,9 @@
             
             $auth = (strtolower($configValues['CONFIG_IFACE_PASSWORD_HIDDEN']) === "yes")
                   ? "[Password is hidden]" : $value;
+            if (function_exists('mask_password_if_restricted')) {
+                $auth = mask_password_if_restricted($auth, $username);
+            }
             
             $ajax_id = "divContainerUserInfo_" . $count;
             $param = sprintf('username=%s', urlencode($username));

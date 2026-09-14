@@ -51,6 +51,39 @@ function createPassword($length, $chars) {
     return $pass;
 }
 
+if (!function_exists('is_super_administrator')) {
+    function is_super_administrator() {
+        $current = $_SESSION['operator_user'] ?? '';
+        return strtolower(trim($current)) === 'administrator';
+    }
+}
+
+if (!function_exists('can_view_password')) {
+    function can_view_password($target_username = '') {
+        if (is_super_administrator()) {
+            return true;
+        }
+        $current = $_SESSION['operator_user'] ?? '';
+        if (!empty($target_username) && strtolower(trim($target_username)) === strtolower(trim($current))) {
+            return true;
+        }
+        return false;
+    }
+}
+
+if (!function_exists('mask_password_if_restricted')) {
+    function mask_password_if_restricted($password, $target_username = '', $mask = '******') {
+        global $configValues;
+        if (!can_view_password($target_username)) {
+            return $mask;
+        }
+        if (isset($configValues['CONFIG_IFACE_PASSWORD_HIDDEN']) && strtolower($configValues['CONFIG_IFACE_PASSWORD_HIDDEN']) === 'yes') {
+            return '[Password is hidden]';
+        }
+        return $password;
+    }
+}
+
 /* convert byte to to size */
 function toxbyte($size) {
     if (!is_numeric($size) || $size <= 0) {

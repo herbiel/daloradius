@@ -200,6 +200,11 @@ function handleAttributes($dbSocket, $subject, $skipList, $insert_only=true, $us
         // we have to prepare the "value".
         // we distinguish between password and non-password attributes
         if (is_passwordlike_attribute($attribute)) {
+            // If the user cannot view the password and the submitted value is the mask, skip updating the password
+            if (!is_group($user_or_group) && $value === '******' && function_exists('can_view_password') && !can_view_password($subject)) {
+                continue;
+            }
+
             // before we proceed we need to understand if the password should be updated or skipped
 
             if (!$insert_only) {

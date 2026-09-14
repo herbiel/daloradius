@@ -228,6 +228,12 @@
                                     "portalloginpassword" => $ui_PortalLoginPassword,
                                );
 
+                if (empty($ui_PortalLoginPassword) && function_exists('can_view_password') && !can_view_password($username)) {
+                    unset($params['portalloginpassword']);
+                    unset($params['changeuserinfo']);
+                    unset($params['enableportallogin']);
+                }
+
                 if ($userinfoExist) {
                     $params["updatedate"] = $current_datetime;
                     $params["updateby"] = $currBy;
@@ -462,7 +468,7 @@ function enableUser() {
                                         "name" => "password",
                                         "caption" => t('all','Password'),
                                         "type" => $hiddenPassword,
-                                        "value" => ((isset($user_password)) ? $user_password : ""),
+                                        "value" => ((isset($user_password)) ? (function_exists('can_view_password') && !can_view_password($username) ? "******" : $user_password) : ""),
                                         "disabled" => true,
                                         "tooltipText" => t('Tooltip','passwordTooltip')
                                      );
@@ -603,8 +609,13 @@ EOF;
                 $type = (preg_match("/-Password$/", $row[0])) ? $hiddenPassword : "text";
                 $onclick = sprintf("document.getElementById('form-%d-radcheck').submit()", $id);
 
+                $attr_val = $row[2];
+                if (preg_match("/-Password$/", $row[0]) && function_exists('can_view_password') && !can_view_password($username)) {
+                    $attr_val = "******";
+                }
+
                 $descriptor = array( 'onclick' => $onclick, 'attribute' => $row[0], 'select_name' => $name, 'selected_option' => $row[1],
-                                     'id__attribute' => $id__attribute, 'type' => $type, 'value' => $row[2], 'name' => $name,
+                                     'id__attribute' => $id__attribute, 'type' => $type, 'value' => $attr_val, 'name' => $name,
                                      'attr_type' => $row[3], 'attr_desc' => $row[4], 'table' => 'radcheck');
 
                 print_edit_attribute($descriptor);
@@ -653,8 +664,13 @@ EOF;
                 $type = (preg_match("/-Password$/", $row[0])) ? $hiddenPassword : "text";
                 $onclick = sprintf("document.getElementById('form-%d-radreply').submit()", $id);
 
+                $attr_val = $row[2];
+                if (preg_match("/-Password$/", $row[0]) && function_exists('can_view_password') && !can_view_password($username)) {
+                    $attr_val = "******";
+                }
+
                 $descriptor = array( 'onclick' => $onclick, 'attribute' => $row[0], 'select_name' => $name, 'selected_option' => $row[1],
-                                     'id__attribute' => $id__attribute, 'type' => $type, 'value' => $row[2], 'name' => $name,
+                                     'id__attribute' => $id__attribute, 'type' => $type, 'value' => $attr_val, 'name' => $name,
                                      'attr_type' => $row[3], 'attr_desc' => $row[4], 'table' => 'radreply');
 
                 print_edit_attribute($descriptor);

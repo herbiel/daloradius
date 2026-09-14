@@ -296,7 +296,7 @@
             $badge = sprintf('<i class="bi bi-%s me-1" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="%s"></i>',
                              $badge_icon, strtolower($type));
 
-            $auth = htmlspecialchars($data['auth'], ENT_QUOTES, 'UTF-8');
+            $auth = mask_password_if_restricted(htmlspecialchars($data['auth'], ENT_QUOTES, 'UTF-8'), $username);
 
             $fullname = htmlspecialchars($data['fullname'], ENT_QUOTES, 'UTF-8');
             $lastlogin = (!empty($data['lastlogin']))

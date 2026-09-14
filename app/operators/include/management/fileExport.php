@@ -353,6 +353,8 @@ switch ($reportType) {
                 
                 if ($attribute != "Cleartext-Password" || $attribute == "Auth-Type") {
                     $value = "(empty)";
+                } else if (function_exists('can_view_password') && !can_view_password($username)) {
+                    $value = "******";
                 }
                 
                 $output .= $username;

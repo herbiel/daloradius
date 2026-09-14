@@ -92,9 +92,10 @@ $_input_descriptors2 = array();
 $_input_descriptors2[] = array(
                                     'id' => 'portalLoginPassword',
                                     'caption' => t('ContactInfo','PortalLoginPassword'),
-                                    'type' => 'text',
+                                    'type' => (function_exists('can_view_password') && !can_view_password($username ?? '')) ? 'password' : 'text',
                                     'name' => 'portalLoginPassword',
-                                    'value' => ((isset($ui_PortalLoginPassword)) ? $ui_PortalLoginPassword : ''),
+                                    'value' => ((function_exists('can_view_password') && !can_view_password($username ?? '')) ? '' : ((isset($ui_PortalLoginPassword)) ? $ui_PortalLoginPassword : '')),
+                                    'placeholder' => ((function_exists('can_view_password') && !can_view_password($username ?? '') && !empty($ui_PortalLoginPassword)) ? '******' : ''),
                                     'tooltipText' => sprintf('If this field is empty then fields "%s" and "%s" are forced to "no"',
                                                               t('ContactInfo','EnableUserUpdate'), t('ContactInfo','EnablePortalLogin')),
                               );

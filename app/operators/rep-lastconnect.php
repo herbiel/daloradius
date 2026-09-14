@@ -241,6 +241,9 @@
             // +-------------+-------------+---------------+-----------+-----------+
 
             list($fullname, $user, $pass, $reply, $datetime) = $row;
+            if (function_exists('mask_password_if_restricted')) {
+                $pass = mask_password_if_restricted($pass, $user);
+            }
 
             $fullname = (!empty($fullname) ? $fullname : "(n/a)");
             $reply = sprintf('<span class="text-%s">%s</span>',

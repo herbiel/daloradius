@@ -92,11 +92,14 @@
                 $notes = (array_key_exists('notes', $_POST) && isset($_POST['notes'])) ? trim($_POST['notes']) : "";
                 
                 // update operator data into the database
-                $sql = sprintf("UPDATE %s SET password='%s', firstname='%s', lastname='%s', title='%s', department='%s',
+                $pwd_sql_part = (!empty($operator_password))
+                              ? sprintf("password='%s', ", $dbSocket->escapeSimple($operator_password))
+                              : "";
+                $sql = sprintf("UPDATE %s SET %sfirstname='%s', lastname='%s', title='%s', department='%s',
                                               company='%s', phone1='%s', phone2='%s', email1='%s', email2='%s', messenger1='%s',
                                               messenger2='%s', updatedate='%s', updateby='%s'
                                  WHERE username='%s'",
-                               $configValues['CONFIG_DB_TBL_DALOOPERATORS'], $dbSocket->escapeSimple($operator_password),
+                               $configValues['CONFIG_DB_TBL_DALOOPERATORS'], $pwd_sql_part,
                                $dbSocket->escapeSimple($firstname), $dbSocket->escapeSimple($lastname), $dbSocket->escapeSimple($title),
                                $dbSocket->escapeSimple($department), $dbSocket->escapeSimple($company), $dbSocket->escapeSimple($phone1),
                                $dbSocket->escapeSimple($phone2), $dbSocket->escapeSimple($email1), $dbSocket->escapeSimple($email2),
@@ -223,13 +226,15 @@
                                         "disabled" => true,
                                      );
                                     
+        $can_view = can_view_password($operator_username);
         $input_descriptors0[] = array(
                                         "id" => "operator_password",
                                         "name" => "operator_password",
                                         "caption" => t('all','Password'),
                                         "type" => $hiddenPassword,
-                                        "value" => ((isset($operator_password)) ? $operator_password : ""),
-                                        "random" => true
+                                        "value" => ($can_view && isset($operator_password)) ? $operator_password : "",
+                                        "placeholder" => !$can_view ? "[Hidden / Leave blank to keep unchanged]" : "",
+                                        "random" => $can_view
                                      );
                                   
         // set navbar stuff
