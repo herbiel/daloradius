@@ -423,6 +423,14 @@
                                         "selected_value" => ((isset($failureMsg)) ? $passwordType : "")
                                     );
 
+        $input_descriptors1[] = array(
+                                        "id" => "email",
+                                        "name" => "email",
+                                        "caption" => t('ContactInfo','Email'),
+                                        "type" => "text",
+                                        "value" => ((isset($failureMsg)) ? $email : "")
+                                     );
+
 
         $input_descriptors2 = array();
 
@@ -526,6 +534,7 @@
 
         // open 1-th tab (shown)
         open_tab($navkeys, 1);
+        $hide_userinfo_email = true;
         include_once('include/management/userinfo.php');
         close_tab($navkeys, 1);
 

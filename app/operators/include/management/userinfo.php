@@ -49,13 +49,15 @@ $_input_descriptors0[] = array(
                                 'value' => ((isset($ui_lastname)) ? $ui_lastname : ''),
                             );
 
-$_input_descriptors0[] = array(
-                                'id' => 'email',
-                                'name' => 'email',
-                                'caption' => t('ContactInfo','Email'),
-                                'type' => 'text',
-                                'value' => ((isset($ui_email)) ? $ui_email : ''),
-                            );
+if (!isset($hide_userinfo_email) || !$hide_userinfo_email) {
+    $_input_descriptors0[] = array(
+                                    'id' => 'email',
+                                    'name' => 'email',
+                                    'caption' => t('ContactInfo','Email'),
+                                    'type' => 'text',
+                                    'value' => ((isset($ui_email)) ? $ui_email : ''),
+                                );
+}
 
 $_input_descriptors0[] = array(
                                 'id' => 'copycontact',

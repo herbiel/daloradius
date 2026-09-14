@@ -473,6 +473,14 @@ function enableUser() {
                                         "tooltipText" => t('Tooltip','passwordTooltip')
                                      );
 
+        $input_descriptors0[] = array(
+                                        "id" => "email",
+                                        "name" => "email",
+                                        "caption" => t('ContactInfo','Email'),
+                                        "type" => "text",
+                                        "value" => ((isset($ui_email)) ? $ui_email : "")
+                                     );
+
         $input_descriptors0[] = array( 'name' => 'oldplanName', 'type' => 'hidden',
                                                  'value' => ((isset($bi_planname)) ? $bi_planname : "") );
 
@@ -688,6 +696,7 @@ EOF;
 
         // open 3-rd tab (not shown)
         open_tab($navkeys, 3);
+        $hide_userinfo_email = true;
         include_once('include/management/userinfo.php');
         close_tab($navkeys, 3);
 

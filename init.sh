@@ -67,6 +67,8 @@ function init_daloradius {
     [ -n "$VPN_CLIENT_DOWNLOAD_ANDROID" ] && set_conf_val "CONFIG_VPN_CLIENT_DOWNLOAD_ANDROID" "$VPN_CLIENT_DOWNLOAD_ANDROID"
     [ -n "$VPN_CLIENT_DOWNLOAD_IOS" ] && set_conf_val "CONFIG_VPN_CLIENT_DOWNLOAD_IOS" "$VPN_CLIENT_DOWNLOAD_IOS"
     sed -i "s/\$configValues\['CONFIG_LOG_FILE'\] = .*;/\$configValues\['CONFIG_LOG_FILE'\] = '\/tmp\/daloradius.log';/" $DALORADIUS_CONF_PATH
+    set_conf_val "CONFIG_RADIUSLOG_FILE" "/var/log/freeradius/radius.log"
+    touch /tmp/daloradius.log && chmod 666 /tmp/daloradius.log
 
     echo "daloRADIUS initialization completed."
 }

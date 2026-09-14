@@ -128,8 +128,45 @@ else
 	date > $DB_LOCK
 fi
 
+function configure_logging_and_sql {
+	echo "Configuring FreeRADIUS SQL post-auth & logging..."
+	for site in "$RADIUS_PATH/sites-available/default" "$RADIUS_PATH/sites-available/inner-tunnel"; do
+		if [ -f "$site" ]; then
+			# Enable sql in authorize, accounting, session, post-auth, and reject
+			sed -i 's/^[[:space:]]*#[[:space:]]*-sql/-sql/' "$site"
+			sed -i 's/^[[:space:]]*#[[:space:]]*sql/sql/' "$site"
+			sed -i '/Post-Auth-Type REJECT {/,/}/ s/^[[:space:]]*#[[:space:]]*-sql/-sql/' "$site"
+		fi
+	done
+
+	if [ -f "$RADIUS_PATH/radiusd.conf" ]; then
+		sed -i 's/^[[:space:]]*auth[[:space:]]*=[[:space:]]*no/auth = yes/' "$RADIUS_PATH/radiusd.conf"
+		sed -i 's/^[[:space:]]*auth_badpass[[:space:]]*=[[:space:]]*no/auth_badpass = yes/' "$RADIUS_PATH/radiusd.conf"
+		sed -i 's/^[[:space:]]*auth_goodpass[[:space:]]*=[[:space:]]*no/auth_goodpass = yes/' "$RADIUS_PATH/radiusd.conf"
+		sed -i 's/^[[:space:]]*destination[[:space:]]*=.*/destination = files/' "$RADIUS_PATH/radiusd.conf"
+	fi
+
+	mkdir -p /var/log/freeradius
+	touch /var/log/freeradius/radius.log
+	chown -R freerad:freerad /var/log/freeradius
+	chmod 755 /var/log/freeradius
+	chmod 666 /var/log/freeradius/radius.log
+}
+
 configure_eap
 sync_radius_certs
+configure_logging_and_sql
 
-# Start freeradius in the foreground and in debug mode
-exec freeradius -f "$@"
+# Stream radius.log to container stdout so 'docker logs radius' continues working
+tail -n 50 -F /var/log/freeradius/radius.log &
+
+# Filter out -X if provided so FreeRADIUS doesn't suppress file logging
+CMD_ARGS=()
+for arg in "$@"; do
+	if [ "$arg" != "-X" ]; then
+		CMD_ARGS+=("$arg")
+	fi
+done
+
+# Start freeradius in the foreground logging to file
+exec freeradius -f -l /var/log/freeradius/radius.log "${CMD_ARGS[@]}"

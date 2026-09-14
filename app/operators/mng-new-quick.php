@@ -369,6 +369,14 @@
                                     "type" => "select"
                                 );
 
+    $input_descriptors0[] = array(
+                                    "id" => "email",
+                                    "name" => "email",
+                                    "caption" => t('ContactInfo','Email'),
+                                    "type" => "text",
+                                    "value" => ((isset($email)) ? $email : "")
+                                );
+
     include_once('include/management/populate_selectbox.php');
     $options = get_groups();
     array_unshift($options, '');
@@ -495,6 +503,7 @@
                        . 'onclick="javascript:small_window(document.newuser.username.value, '
                        . 'document.newuser.password.value, document.newuser.maxallsession.value);" '
                        . 'class="button">';
+    $hide_userinfo_email = true;
     include_once('include/management/userinfo.php');
 
     close_tab($navkeys, 1);

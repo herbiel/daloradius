@@ -44,9 +44,8 @@ services:
       - RADIUS_PEAP_INNER_EAP_TYPE=${RADIUS_PEAP_INNER_EAP_TYPE:-mschapv2}
     volumes:
       - ${RADIUS_CERT_HOST_DIR:-/opt/radius-certs}:/opt/radius-certs:ro
-#      - ./data/freeradius:/data
-    # If you want to disable debug output, remove the command parameter
-    command: -X
+      - ./init-freeradius.sh:/app/init-freeradius.sh
+      - ./data/logs/freeradius:/var/log/freeradius
 
   radius-web:
     build: .
@@ -101,3 +100,4 @@ services:
       - ./app:/var/www/daloradius/app
       - ./init.sh:/var/www/daloradius/init.sh
       - ./data/daloradius:/data
+      - ./data/logs/freeradius:/var/log/freeradius:ro
