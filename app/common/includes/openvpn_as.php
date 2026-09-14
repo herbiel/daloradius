@@ -316,9 +316,25 @@ function openvpn_as_create_and_fetch_profile($config, $username, $profile_type =
 }
 
 /**
+ * Get client download links with fallbacks to official OpenVPN Connect URLs.
+ * Can be overridden via $config (from .env / daloradius.conf.php).
+ *
+ * @param array $config
+ * @return array
+ */
+function openvpn_as_get_download_links($config = array()) {
+    return array(
+        'windows' => !empty($config['CONFIG_VPN_CLIENT_DOWNLOAD_WINDOWS']) ? $config['CONFIG_VPN_CLIENT_DOWNLOAD_WINDOWS'] : 'https://openvpn.net/downloads/openvpn-connect-v3-windows.msi',
+        'macos'   => !empty($config['CONFIG_VPN_CLIENT_DOWNLOAD_MACOS']) ? $config['CONFIG_VPN_CLIENT_DOWNLOAD_MACOS'] : 'https://openvpn.net/downloads/openvpn-connect-v3-macos.dmg',
+        'android' => !empty($config['CONFIG_VPN_CLIENT_DOWNLOAD_ANDROID']) ? $config['CONFIG_VPN_CLIENT_DOWNLOAD_ANDROID'] : 'https://openvpn.net/downloads/openvpn-connect-v3-android.apk',
+        'ios'     => !empty($config['CONFIG_VPN_CLIENT_DOWNLOAD_IOS']) ? $config['CONFIG_VPN_CLIENT_DOWNLOAD_IOS'] : 'https://apps.apple.com/us/app/openvpn-connect-openvpn-app/id590379981',
+    );
+}
+
+/**
  * Build a modern, rich HTML email body containing account credentials,
- * cross-platform client download links, explicit iOS US App Store requirement notice,
- * and clear step-by-step setup instructions.
+ * configurable cross-platform client download links, explicit iOS US App Store requirement notice,
+ * and clear step-by-step setup instructions (highlighting password entry and Save password).
  *
  * @param string $firstname
  * @param string $lastname
@@ -327,13 +343,23 @@ function openvpn_as_create_and_fetch_profile($config, $username, $profile_type =
  * @param string $vpn_server
  * @param bool   $has_profile_attachment
  * @param string $portal_url
+ * @param array  $links
  * @return string HTML email content
  */
-function openvpn_as_build_email_body($firstname, $lastname, $username, $password, $vpn_server, $has_profile_attachment = true, $portal_url = '') {
+function openvpn_as_build_email_body($firstname, $lastname, $username, $password, $vpn_server, $has_profile_attachment = true, $portal_url = '', $links = array()) {
     $name = trim("$firstname $lastname") ?: $username;
     if (empty($portal_url)) {
         $portal_url = sprintf('https://%s:943/', $vpn_server);
     }
+
+    if (empty($links) || !is_array($links)) {
+        $links = openvpn_as_get_download_links();
+    }
+
+    $link_win = htmlspecialchars($links['windows'] ?? 'https://openvpn.net/downloads/openvpn-connect-v3-windows.msi', ENT_QUOTES, 'UTF-8');
+    $link_mac = htmlspecialchars($links['macos'] ?? 'https://openvpn.net/downloads/openvpn-connect-v3-macos.dmg', ENT_QUOTES, 'UTF-8');
+    $link_apk = htmlspecialchars($links['android'] ?? 'https://openvpn.net/downloads/openvpn-connect-v3-android.apk', ENT_QUOTES, 'UTF-8');
+    $link_ios = htmlspecialchars($links['ios'] ?? 'https://apps.apple.com/us/app/openvpn-connect-openvpn-app/id590379981', ENT_QUOTES, 'UTF-8');
 
     $safe_name = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
     $safe_user = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
@@ -363,7 +389,7 @@ function openvpn_as_build_email_body($firstname, $lastname, $username, $password
                 </tr>
                 <tr>
                     <td style="padding: 6px 0; color: #64748b;"><strong>登录密码：</strong></td>
-                    <td style="padding: 6px 0; font-family: monospace; font-size: 15px; color: #0f172a;"><strong style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">{$safe_pass}</strong></td>
+                    <td style="padding: 6px 0; font-family: monospace; font-size: 15px; color: #0f172a;"><strong style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; border: 1px solid #cbd5e1;">{$safe_pass}</strong></td>
                 </tr>
                 <tr>
                     <td style="padding: 6px 0; color: #64748b;"><strong>VPN 服务器：</strong></td>
@@ -379,8 +405,8 @@ function openvpn_as_build_email_body($firstname, $lastname, $username, $password
         <!-- Attachments Notice -->
         <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 18px 0; border-radius: 0 6px 6px 0; font-size: 14px;">
             <strong style="color: #1e40af;">📎 本邮件附件已包含专属配置文件与离线说明：</strong><br>
-            1. <strong><code>{$safe_user}.ovpn</code></strong>：您的个人加密配置文件，导入即可自动连接。<br>
-            2. <strong><code>OpenVPN_快速使用指南及下载.html</code></strong>：离线双击即可打开的各平台详细配置图解说明书。
+            1. <strong><code>{$safe_user}.ovpn</code></strong>：您的个人专属配置文件，导入客户端即可使用。<br>
+            2. <strong><code>OpenVPN_快速使用指南及下载.html</code></strong>：离线双击即可用浏览器打开的各平台图文使用说明。
         </div>
 
         <!-- iOS Requirement Alert -->
@@ -388,6 +414,14 @@ function openvpn_as_build_email_body($firstname, $lastname, $username, $password
             <strong style="font-size: 14px; display: block; margin-bottom: 4px;">⚠️ 【重要须知】iOS (iPhone / iPad) 用户下载说明：</strong>
             因 Apple 政策限制，OpenVPN Connect 官方客户端<b>未在大陆区 App Store 上架</b>。
             iPhone/iPad 用户<b>必须切换至海外地区（如美区、港区）Apple ID</b> 登录 App Store，搜索「<strong>OpenVPN Connect</strong>」进行下载安装。如暂无海外 Apple ID，请联系管理员协助。
+        </div>
+
+        <!-- Password & Save Password Emphasis Alert -->
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 14px 16px; margin: 18px 0; border-radius: 0 6px 6px 0; font-size: 13.5px; color: #166534; line-height: 1.6;">
+            <strong style="font-size: 14px; display: block; margin-bottom: 4px;">📌 【关键设置】输入密码并勾选保存密码：</strong>
+            导入 <code>{$safe_user}.ovpn</code> 配置文件后首次连接时：<br>
+            1. <strong>输入密码：</strong>请在客户端 Password 框中手动输入上方密码：<code style="background: #dcfce7; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #14532d;">{$safe_pass}</code><br>
+            2. <strong>勾选「Save password」：</strong><b>请务必勾选「Save password（记住密码）」复选框！</b>勾选后后续每次打开客户端均会自动免密连接；若未勾选，断线或重启后每次都需要重新输入密码。
         </div>
 
         <!-- Software Download Matrix -->
@@ -399,21 +433,21 @@ function openvpn_as_build_email_body($firstname, $lastname, $username, $password
                 <td style="padding: 10px 14px; font-weight: 600; width: 140px;">🖥️ Windows (10/11)</td>
                 <td style="padding: 10px 14px; color: #64748b;">官方 64位 MSI 安装包</td>
                 <td style="padding: 10px 14px; text-align: right;">
-                    <a href="https://openvpn.net/downloads/openvpn-connect-v3-windows.msi" target="_blank" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 500; font-size: 12px;">直接下载 MSI</a>
+                    <a href="{$link_win}" target="_blank" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 500; font-size: 12px;">直接下载 MSI</a>
                 </td>
             </tr>
             <tr style="background-color: #f8fafc; border-radius: 6px;">
                 <td style="padding: 10px 14px; font-weight: 600;">🍏 macOS (Apple / Intel)</td>
                 <td style="padding: 10px 14px; color: #64748b;">通用 DMG 安装镜像</td>
                 <td style="padding: 10px 14px; text-align: right;">
-                    <a href="https://openvpn.net/downloads/openvpn-connect-v3-macos.dmg" target="_blank" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 500; font-size: 12px;">直接下载 DMG</a>
+                    <a href="{$link_mac}" target="_blank" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 500; font-size: 12px;">直接下载 DMG</a>
                 </td>
             </tr>
             <tr style="background-color: #f8fafc; border-radius: 6px;">
                 <td style="padding: 10px 14px; font-weight: 600;">🤖 Android (安卓手机/平板)</td>
                 <td style="padding: 10px 14px; color: #64748b;">官方 APK 直链 / Google Play</td>
                 <td style="padding: 10px 14px; text-align: right;">
-                    <a href="https://openvpn.net/downloads/openvpn-connect-v3-android.apk" target="_blank" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: 500; font-size: 12px; margin-right: 4px;">下载 APK</a>
+                    <a href="{$link_apk}" target="_blank" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: 500; font-size: 12px; margin-right: 4px;">下载 APK</a>
                     <a href="https://play.google.com/store/apps/details?id=net.openvpn.openvpn" target="_blank" style="display: inline-block; background-color: #475569; color: #ffffff; text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 12px;">Google Play</a>
                 </td>
             </tr>
@@ -421,7 +455,7 @@ function openvpn_as_build_email_body($firstname, $lastname, $username, $password
                 <td style="padding: 10px 14px; font-weight: 600; color: #92400e;">🍎 iOS (iPhone / iPad)</td>
                 <td style="padding: 10px 14px; color: #b45309;"><strong>需美区/海外 Apple ID</strong></td>
                 <td style="padding: 10px 14px; text-align: right;">
-                    <a href="https://apps.apple.com/us/app/openvpn-connect-openvpn-app/id590379981" target="_blank" style="display: inline-block; background-color: #d97706; color: #ffffff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 500; font-size: 12px;">App Store (美区)</a>
+                    <a href="{$link_ios}" target="_blank" style="display: inline-block; background-color: #d97706; color: #ffffff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 500; font-size: 12px;">App Store (美区)</a>
                 </td>
             </tr>
         </table>
@@ -432,7 +466,7 @@ function openvpn_as_build_email_body($firstname, $lastname, $username, $password
             <li><strong>安装客户端：</strong>点击上方对应系统链接，下载并完成 OpenVPN Connect 客户端安装。</li>
             <li><strong>保存配置文件：</strong>将本邮件附件中的 <code>{$safe_user}.ovpn</code> 个人专属配置文件保存到电脑或手机中。</li>
             <li><strong>导入配置：</strong>打开 OpenVPN Connect 软件，切换到 <strong>File / Upload File</strong> 标签页，拖入或选择保存的 <code>{$safe_user}.ovpn</code> 文件导入。</li>
-            <li><strong>一键连接：</strong>用户名已自动填充，输入本邮件上方提供的<strong>登录密码</strong>，勾选「Save password（记住密码）」，点击 <strong>CONNECT</strong> 按钮即可接入网络。</li>
+            <li><strong>输入密码并勾选保存密码：</strong>导入后用户名已自动填好，请在 Password 输入框中填入本邮件上方的<strong>登录密码</strong>，<strong>务必勾选「Save password（记住密码）」</strong>，然后点击 <strong>CONNECT</strong> 按钮即可接入网络！</li>
         </ol>
 
         <!-- FAQ Note -->
@@ -463,12 +497,23 @@ HTML;
  * @param string $password
  * @param string $vpn_server
  * @param string $portal_url
+ * @param array  $links
  * @return string Complete HTML document
  */
-function openvpn_as_build_offline_guide_html($username, $password, $vpn_server, $portal_url = '') {
+function openvpn_as_build_offline_guide_html($username, $password, $vpn_server, $portal_url = '', $links = array()) {
     if (empty($portal_url)) {
         $portal_url = sprintf('https://%s:943/', $vpn_server);
     }
+
+    if (empty($links) || !is_array($links)) {
+        $links = openvpn_as_get_download_links();
+    }
+
+    $link_win = htmlspecialchars($links['windows'] ?? 'https://openvpn.net/downloads/openvpn-connect-v3-windows.msi', ENT_QUOTES, 'UTF-8');
+    $link_mac = htmlspecialchars($links['macos'] ?? 'https://openvpn.net/downloads/openvpn-connect-v3-macos.dmg', ENT_QUOTES, 'UTF-8');
+    $link_apk = htmlspecialchars($links['android'] ?? 'https://openvpn.net/downloads/openvpn-connect-v3-android.apk', ENT_QUOTES, 'UTF-8');
+    $link_ios = htmlspecialchars($links['ios'] ?? 'https://apps.apple.com/us/app/openvpn-connect-openvpn-app/id590379981', ENT_QUOTES, 'UTF-8');
+
     $safe_user = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
     $safe_pass = htmlspecialchars($password, ENT_QUOTES, 'UTF-8');
     $safe_serv = htmlspecialchars($vpn_server, ENT_QUOTES, 'UTF-8');
@@ -492,6 +537,7 @@ function openvpn_as_build_offline_guide_html($username, $password, $vpn_server, 
         .card-title { font-weight: 700; color: #334155; margin-bottom: 12px; font-size: 15px; }
         .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; background: #e2e8f0; color: #0f172a; }
         .alert-ios { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 20px 0; color: #92400e; font-size: 14px; }
+        .alert-pwd { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 20px 0; color: #166534; font-size: 14px; }
         .btn { display: inline-block; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; text-decoration: none; color: #fff; background: var(--primary); transition: background 0.2s; }
         .btn:hover { background: var(--primary-hover); }
         .btn-green { background: #059669; }
@@ -527,7 +573,13 @@ function openvpn_as_build_offline_guide_html($username, $password, $vpn_server, 
         iOS 用户请先退出大陆 Apple ID，在 App Store 登录<strong>海外区（如美区、港区）Apple ID</strong>，搜索下载「<strong>OpenVPN Connect</strong>」。如需美区账号，请联系 IT 管理员。
     </div>
 
-    <h3>📥 各平台官方客户端下载直链</h3>
+    <div class="alert-pwd">
+        <strong>📌 【特别提醒】输入密码并勾选保存密码：</strong><br>
+        导入 <code>{$safe_user}.ovpn</code> 配置后首次连接时，在 Password 框中手动输入本页上方的密码：<strong>{$safe_pass}</strong>。<br>
+        <strong>务必勾选「Save password（记住密码）」复选框</strong>，勾选后客户端会自动记住密码，之后每次点击即可直接连接，无需再次输入。
+    </div>
+
+    <h3>📥 各平台客户端下载直链</h3>
     <table class="matrix">
         <thead>
             <tr>
@@ -540,24 +592,24 @@ function openvpn_as_build_offline_guide_html($username, $password, $vpn_server, 
             <tr>
                 <td><strong>🖥️ Windows 10 / 11</strong></td>
                 <td>官方 64 位完整安装包 (.msi)</td>
-                <td><a class="btn" href="https://openvpn.net/downloads/openvpn-connect-v3-windows.msi" target="_blank">下载 Windows MSI</a></td>
+                <td><a class="btn" href="{$link_win}" target="_blank">下载 Windows MSI</a></td>
             </tr>
             <tr>
                 <td><strong>🍏 macOS (Apple/Intel)</strong></td>
                 <td>全芯片架构通用安装镜像 (.dmg)</td>
-                <td><a class="btn" href="https://openvpn.net/downloads/openvpn-connect-v3-macos.dmg" target="_blank">下载 macOS DMG</a></td>
+                <td><a class="btn" href="{$link_mac}" target="_blank">下载 macOS DMG</a></td>
             </tr>
             <tr>
                 <td><strong>🤖 Android (安卓手机)</strong></td>
                 <td>官方安装包 APK / Google Play</td>
                 <td>
-                    <a class="btn btn-green" href="https://openvpn.net/downloads/openvpn-connect-v3-android.apk" target="_blank">下载 APK 直链</a>
+                    <a class="btn btn-green" href="{$link_apk}" target="_blank">下载 APK 直链</a>
                 </td>
             </tr>
             <tr>
                 <td><strong>🍎 iOS (iPhone / iPad)</strong></td>
                 <td>需美区 / 海外 Apple ID</td>
-                <td><a class="btn btn-amber" href="https://apps.apple.com/us/app/openvpn-connect-openvpn-app/id590379981" target="_blank">App Store (美区)</a></td>
+                <td><a class="btn btn-amber" href="{$link_ios}" target="_blank">App Store (美区)</a></td>
             </tr>
         </tbody>
     </table>
@@ -567,7 +619,7 @@ function openvpn_as_build_offline_guide_html($username, $password, $vpn_server, 
         <li><strong>下载安装客户端：</strong>根据上面的操作系统表格，下载并完成对应客户端的安装。</li>
         <li><strong>获取专属配置文件：</strong>将邮件中随附的 <code>{$safe_user}.ovpn</code> 文件下载保存到本地。</li>
         <li><strong>导入配置文件：</strong>打开 OpenVPN Connect，选择 <strong>File / Upload File</strong>，将下载的 <code>{$safe_user}.ovpn</code> 拖入或选取导入。</li>
-        <li><strong>输入密码连接：</strong>用户名已自动填好，输入本页上方的初始密码，勾选 <strong>Save password</strong>，点击 <strong>CONNECT</strong> 即可接入公司网络！</li>
+        <li><strong>输入密码并勾选保存密码：</strong>用户名已自动填好，输入本页上方的初始密码，<strong>勾选「Save password（记住密码）」</strong>，点击 <strong>CONNECT</strong> 即可接入公司网络！</li>
     </ol>
 
     <div class="card" style="background:#f1f5f9;">

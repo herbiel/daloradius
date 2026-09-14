@@ -124,6 +124,11 @@ $configValues['CONFIG_OPENVPN_AS_DEFAULT_GROUP'] = '';
 $configValues['CONFIG_OPENVPN_AS_SSH_USER'] = 'root';
 $configValues['CONFIG_OPENVPN_AS_SSH_PORT'] = '22';
 $configValues['CONFIG_OPENVPN_AS_SSH_KEY'] = '';
+$configValues['CONFIG_OPENVPN_AS_WEB_URL'] = 'https://192.168.50.113:943/';
+$configValues['CONFIG_VPN_CLIENT_DOWNLOAD_WINDOWS'] = 'https://openvpn.net/downloads/openvpn-connect-v3-windows.msi';
+$configValues['CONFIG_VPN_CLIENT_DOWNLOAD_MACOS'] = 'https://openvpn.net/downloads/openvpn-connect-v3-macos.dmg';
+$configValues['CONFIG_VPN_CLIENT_DOWNLOAD_ANDROID'] = 'https://openvpn.net/downloads/openvpn-connect-v3-android.apk';
+$configValues['CONFIG_VPN_CLIENT_DOWNLOAD_IOS'] = 'https://apps.apple.com/us/app/openvpn-connect-openvpn-app/id590379981';
 
 
 

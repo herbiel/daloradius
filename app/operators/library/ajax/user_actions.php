@@ -223,10 +223,11 @@ if (array_key_exists('username', $_GET) && isset($_GET['username']) &&
                 $vpn_server = !empty($configValues['CONFIG_OPENVPN_AS_HOST']) ? $configValues['CONFIG_OPENVPN_AS_HOST'] : (!empty($configValues['CONFIG_USER_VPN_SERVER']) ? $configValues['CONFIG_USER_VPN_SERVER'] : '192.168.50.113');
                 $portal_url = !empty($configValues['CONFIG_OPENVPN_AS_WEB_URL']) ? $configValues['CONFIG_OPENVPN_AS_WEB_URL'] : sprintf('https://%s:943/', $vpn_server);
                 $has_profile = !empty($attachments);
+                $download_links = function_exists('openvpn_as_get_download_links') ? openvpn_as_get_download_links($configValues) : array();
 
                 // Add standalone offline user guide as an additional attachment
                 if (function_exists('openvpn_as_build_offline_guide_html')) {
-                    $guide_html = openvpn_as_build_offline_guide_html($recipient_username, $recipient_password, $vpn_server, $portal_url);
+                    $guide_html = openvpn_as_build_offline_guide_html($recipient_username, $recipient_password, $vpn_server, $portal_url, $download_links);
                     $attachments[] = array(
                         'filename' => 'OpenVPN_快速使用指南及下载.html',
                         'content'  => $guide_html,
@@ -245,7 +246,8 @@ if (array_key_exists('username', $_GET) && isset($_GET['username']) &&
                         $recipient_password,
                         $vpn_server,
                         $has_profile,
-                        $portal_url
+                        $portal_url,
+                        $download_links
                     );
                 } else {
                     $body = sprintf(
