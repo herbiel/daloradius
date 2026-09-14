@@ -98,4 +98,6 @@ services:
       - VPN_CLIENT_DOWNLOAD_IOS=${VPN_CLIENT_DOWNLOAD_IOS:-}
 
     volumes:
+      - ./app:/var/www/daloradius/app
+      - ./init.sh:/var/www/daloradius/init.sh
       - ./data/daloradius:/data
