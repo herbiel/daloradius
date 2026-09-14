@@ -21,8 +21,11 @@ ENV DEBIAN_FRONTEND noninteractive
 # default timezone
 ENV TZ Europe/Vienna
 
-# PHP install
-RUN apt-get update \
+# PHP install with Aliyun mirror
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list \
+  && sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list \
+  && sed -i '/debian-security/d' /etc/apt/sources.list \
+  && apt-get update \
   && apt-get install --yes --no-install-recommends \
   ca-certificates \
   apt-utils \
