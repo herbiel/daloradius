@@ -55,35 +55,37 @@ if (isset($configValues['CONFIG_DB_PASSWORD_ENCRYPTION']) &&
     $valid_passwordTypes = array_values(array_diff($valid_passwordTypes, array("Cleartext-Password")));
 }
 
-// Router for CRUD operations
-if ($httpMethod === 'POST' && ($action === 'change_password' || $action === 'set_password' || $action === 'update_password' || $action === 'password')) {
-    handle_change_password($dbSocket, $configValues, $reqData, $operator, $valid_passwordTypes);
-} else if ($httpMethod === 'POST' && ($action === 'delete' || $action === 'del' || $action === 'remove')) {
-    handle_delete_account($dbSocket, $configValues, $reqData, $operator);
-} else if ($httpMethod === 'POST' && ($action === 'get' || $action === 'show' || $action === 'view' || $action === 'read')) {
-    handle_get_account($dbSocket, $configValues, $reqData);
-} else {
-    switch ($httpMethod) {
-        case 'GET':
-            handle_get_account($dbSocket, $configValues, $reqData);
-            break;
+if (!defined('DALO_ACCOUNTS_API_NO_DISPATCH')) {
+    // Router for CRUD operations
+    if ($httpMethod === 'POST' && ($action === 'change_password' || $action === 'set_password' || $action === 'update_password' || $action === 'password')) {
+        handle_change_password($dbSocket, $configValues, $reqData, $operator, $valid_passwordTypes);
+    } else if ($httpMethod === 'POST' && ($action === 'delete' || $action === 'del' || $action === 'remove')) {
+        handle_delete_account($dbSocket, $configValues, $reqData, $operator);
+    } else if ($httpMethod === 'POST' && ($action === 'get' || $action === 'show' || $action === 'view' || $action === 'read')) {
+        handle_get_account($dbSocket, $configValues, $reqData);
+    } else {
+        switch ($httpMethod) {
+            case 'GET':
+                handle_get_account($dbSocket, $configValues, $reqData);
+                break;
 
-        case 'POST':
-            handle_add_account($dbSocket, $configValues, $reqData, $operator, $valid_passwordTypes);
-            break;
+            case 'POST':
+                handle_add_account($dbSocket, $configValues, $reqData, $operator, $valid_passwordTypes);
+                break;
 
-        case 'PUT':
-        case 'PATCH':
-            handle_change_password($dbSocket, $configValues, $reqData, $operator, $valid_passwordTypes);
-            break;
+            case 'PUT':
+            case 'PATCH':
+                handle_change_password($dbSocket, $configValues, $reqData, $operator, $valid_passwordTypes);
+                break;
 
-        case 'DELETE':
-            handle_delete_account($dbSocket, $configValues, $reqData, $operator);
-            break;
+            case 'DELETE':
+                handle_delete_account($dbSocket, $configValues, $reqData, $operator);
+                break;
 
-        default:
-            api_send_error('Method Not Allowed: ' . $httpMethod, 405);
-            break;
+            default:
+                api_send_error('Method Not Allowed: ' . $httpMethod, 405);
+                break;
+        }
     }
 }
 
@@ -97,17 +99,32 @@ require_once(__DIR__ . '/../../../common/includes/db_close.php');
  * =========================================================================
  */
 function handle_add_account($dbSocket, $configValues, $data, $operator, $valid_passwordTypes) {
-    // 1. Validate Username
-    if (!isset($data['username']) || trim($data['username']) === '') {
-        api_send_error('Field "username" is required.', 400);
+    // 1. Validate or derive Username
+    $username = '';
+    if (isset($data['username']) && trim($data['username']) !== '') {
+        $username = trim(str_replace('%', '', $data['username']));
+    } else if (isset($data['email']) && trim($data['email']) !== '') {
+        $emailParts = explode('@', trim($data['email']));
+        $username = strtolower(trim(str_replace('%', '', $emailParts[0])));
     }
-    $username = trim(str_replace('%', '', $data['username']));
 
-    // 2. Validate Password
-    if (!isset($data['password']) || (string)$data['password'] === '') {
-        api_send_error('Field "password" is required.', 400);
+    if (empty($username)) {
+        api_send_error('Field "username" (or a valid "email") is required.', 400);
     }
-    $password = (string)$data['password'];
+
+    // 2. Validate or auto-generate Password
+    $generatedPassword = false;
+    if (!isset($data['password']) || (string)$data['password'] === '') {
+        $allowedChars = $configValues['CONFIG_USER_ALLOWEDRANDOMCHARS'] ?? 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        if (function_exists('createPassword')) {
+            $password = createPassword(10, $allowedChars);
+        } else {
+            $password = substr(bin2hex(random_bytes(6)), 0, 10);
+        }
+        $generatedPassword = true;
+    } else {
+        $password = (string)$data['password'];
+    }
 
     // 3. Check if user already exists
     if (user_exists($dbSocket, $username)) {
@@ -377,7 +394,7 @@ function handle_add_account($dbSocket, $configValues, $data, $operator, $valid_p
     $openvpnProfile = null;
     $openvpnStatus = null;
     $syncVpn = isset($data['sync_vpn']) ? filter_var($data['sync_vpn'], FILTER_VALIDATE_BOOLEAN) :
-              (isset($data['fetch_profile']) ? filter_var($data['fetch_profile'], FILTER_VALIDATE_BOOLEAN) : false);
+              (isset($data['fetch_profile']) ? filter_var($data['fetch_profile'], FILTER_VALIDATE_BOOLEAN) : true);
 
     if ($syncVpn) {
         require_once(__DIR__ . '/../../../common/includes/openvpn_as.php');
@@ -398,7 +415,7 @@ function handle_add_account($dbSocket, $configValues, $data, $operator, $valid_p
     // 12. Optionally send credential & profile email
     $emailSent = false;
     $sendMail = isset($data['send_mail']) ? filter_var($data['send_mail'], FILTER_VALIDATE_BOOLEAN) :
-               (isset($data['send_email']) ? filter_var($data['send_email'], FILTER_VALIDATE_BOOLEAN) : false);
+               (isset($data['send_email']) ? filter_var($data['send_email'], FILTER_VALIDATE_BOOLEAN) : !empty($userInfoParams['email']));
 
     if ($sendMail && !empty($userInfoParams['email'])) {
         require_once(__DIR__ . '/../../../common/includes/mail.php');
@@ -445,12 +462,15 @@ function handle_add_account($dbSocket, $configValues, $data, $operator, $valid_p
 
     // Success response
     $resp = array(
-        'username'         => $username,
-        'password_type'    => $passwordType,
-        'attributes_count' => $attributesCount,
-        'groups_count'     => $groupsCount,
-        'has_user_info'    => $addedUserInfo,
-        'has_billing_info' => $addedBillingInfo,
+        'username'           => $username,
+        'password'           => $password,
+        'generated_password' => $generatedPassword,
+        'email'              => $userInfoParams['email'] ?? '',
+        'password_type'      => $passwordType,
+        'attributes_count'   => $attributesCount,
+        'groups_count'       => $groupsCount,
+        'has_user_info'      => $addedUserInfo,
+        'has_billing_info'   => $addedBillingInfo,
     );
 
     if ($openvpnProfile !== null || $openvpnStatus !== null) {

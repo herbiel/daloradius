@@ -95,6 +95,7 @@ services:
       - VPN_CLIENT_DOWNLOAD_MACOS=${VPN_CLIENT_DOWNLOAD_MACOS:-}
       - VPN_CLIENT_DOWNLOAD_ANDROID=${VPN_CLIENT_DOWNLOAD_ANDROID:-}
       - VPN_CLIENT_DOWNLOAD_IOS=${VPN_CLIENT_DOWNLOAD_IOS:-}
+      - API_KEY=${API_KEY:-}
 
     volumes:
       - ./app:/var/www/daloradius/app
