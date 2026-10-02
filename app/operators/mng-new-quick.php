@@ -128,12 +128,17 @@
 
             include('../common/includes/db_open.php');
 
-            // check if username is already present in the radcheck table
-            $userExists = user_exists($dbSocket, $username);
+            // check if username or email is already present (by username, email, or email-prefix)
+            $existingUser = function_exists('find_existing_user')
+                          ? find_existing_user($dbSocket, $username, $email)
+                          : (user_exists($dbSocket, $username) ? array('username' => $username, 'matched_by' => 'username', 'email' => '') : false);
 
-            if ($userExists) {
-                $failureMsg = "user already exist in database: <b> $username_enc </b>";
-                $logAction .= "Failed adding new user already existing in database [$username] on page: ";
+            if ($existingUser) {
+                $failureMsg = sprintf("User already exists in database: <b>%s</b> (matched by %s%s)",
+                                      htmlspecialchars($existingUser['username'], ENT_QUOTES, 'UTF-8'),
+                                      $existingUser['matched_by'],
+                                      !empty($existingUser['email']) ? ' [' . htmlspecialchars($existingUser['email'], ENT_QUOTES, 'UTF-8') . ']' : '');
+                $logAction .= sprintf("Failed adding new user already existing in database [%s] on page: ", $existingUser['username']);
             } else {
 
                 // username and password are required

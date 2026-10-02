@@ -126,9 +126,29 @@ function handle_add_account($dbSocket, $configValues, $data, $operator, $valid_p
         $password = (string)$data['password'];
     }
 
-    // 3. Check if user already exists
-    if (user_exists($dbSocket, $username)) {
-        api_send_error(sprintf('User "%s" already exists.', $username), 409);
+    // 3. Check if user already exists (by username, email, or email-prefix)
+    $emailToCheck = isset($data['email']) ? $data['email'] :
+                    (isset($data['userInfo']['email']) ? $data['userInfo']['email'] : '');
+    $existing = function_exists('find_existing_user')
+              ? find_existing_user($dbSocket, $username, $emailToCheck)
+              : (user_exists($dbSocket, $username) ? array('username' => $username, 'matched_by' => 'username', 'email' => '') : false);
+
+    if ($existing) {
+        $skipIfExists = isset($data['skip_if_exists']) ? filter_var($data['skip_if_exists'], FILTER_VALIDATE_BOOLEAN) : false;
+        if ($skipIfExists) {
+            api_send_response(array(
+                'username'       => $existing['username'],
+                'already_exists' => true,
+                'matched_by'     => $existing['matched_by'],
+                'action'         => 'skipped',
+            ), 200, sprintf('User "%s" already exists (matched by %s). Skipped creation.', $existing['username'], $existing['matched_by']));
+        } else {
+            api_send_error(sprintf('User "%s" already exists (matched by %s%s).',
+                $existing['username'],
+                $existing['matched_by'],
+                !empty($existing['email']) ? ' [' . $existing['email'] . ']' : ''
+            ), 409);
+        }
     }
 
     // 4. Password Type

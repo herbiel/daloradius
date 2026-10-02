@@ -135,6 +135,29 @@ if (!empty($group)) {
     $accountData['groups'] = array($group);
 }
 
+// Check if user already exists (by username, email, or email-prefix)
+$existing = find_existing_user($dbSocket, $username, $email);
+if ($existing) {
+    // User already exists! Do NOT re-create!
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(array(
+        'code'    => 0,
+        'status'  => 'success',
+        'action'  => 'skipped',
+        'message' => sprintf('User "%s" already exists (matched by %s%s). Skipped creation.',
+                             $existing['username'],
+                             $existing['matched_by'],
+                             !empty($existing['email']) ? ': ' . $existing['email'] : ''),
+        'data'    => array(
+            'username'       => $existing['username'],
+            'email'          => $existing['email'] ?: $email,
+            'already_exists' => true,
+            'matched_by'     => $existing['matched_by']
+        )
+    ), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Delegate to standard accounts management API logic
 define('DALO_ACCOUNTS_API_NO_DISPATCH', true);
 require_once(__DIR__ . '/accounts.php');

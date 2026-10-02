@@ -143,6 +143,95 @@ function user_exists($dbSocket, $username, $table_index='CONFIG_DB_TBL_RADCHECK'
     }
 }
 
+/**
+ * Check if a user already exists in RADIUS or UserInfo tables by:
+ * 1. Username exact match (in radcheck or dalouserinfo)
+ * 2. Email exact match (in dalouserinfo)
+ * 3. Username matching email prefix (e.g. given username matches existing user's email prefix)
+ * 4. Email prefix matching existing username (e.g. given email's prefix matches existing user's username)
+ *
+ * @param DB $dbSocket
+ * @param string $username
+ * @param string $email
+ * @return array|false Returns array('username' => ..., 'email' => ..., 'matched_by' => ...) if found, false otherwise
+ */
+function find_existing_user($dbSocket, $username, $email = '') {
+    global $configValues, $logDebugSQL;
+
+    $username = trim(str_replace('%', '', (string)$username));
+    $email = trim(str_replace('%', '', (string)$email));
+
+    $email_prefix = '';
+    if (!empty($email) && strpos($email, '@') !== false) {
+        $parts = explode('@', $email);
+        $email_prefix = strtolower(trim($parts[0]));
+    }
+
+    $radcheck_tbl = $configValues['CONFIG_DB_TBL_RADCHECK'] ?? 'radcheck';
+    $userinfo_tbl = $configValues['CONFIG_DB_TBL_DALOUSERINFO'] ?? 'userinfo';
+
+    // 1. Direct radcheck username match
+    if (!empty($username)) {
+        $sql = sprintf("SELECT username FROM %s WHERE username='%s' LIMIT 1",
+                       $radcheck_tbl, $dbSocket->escapeSimple($username));
+        $res = $dbSocket->query($sql);
+        $logDebugSQL .= "$sql;\n";
+        if ($res && !DB::isError($res) && $res->numRows() > 0) {
+            $row = $res->fetchRow();
+            return array('username' => $row[0], 'email' => '', 'matched_by' => 'username');
+        }
+    }
+
+    // 2. Email prefix matches radcheck username
+    if (!empty($email_prefix)) {
+        $sql = sprintf("SELECT username FROM %s WHERE username='%s' LIMIT 1",
+                       $radcheck_tbl, $dbSocket->escapeSimple($email_prefix));
+        $res = $dbSocket->query($sql);
+        $logDebugSQL .= "$sql;\n";
+        if ($res && !DB::isError($res) && $res->numRows() > 0) {
+            $row = $res->fetchRow();
+            return array('username' => $row[0], 'email' => '', 'matched_by' => 'email_prefix');
+        }
+    }
+
+    // 3. Check dalouserinfo by username, email, or prefix match
+    $where_clauses = array();
+    if (!empty($username)) {
+        $where_clauses[] = sprintf("username='%s'", $dbSocket->escapeSimple($username));
+        $where_clauses[] = sprintf("(email != '' AND SUBSTRING_INDEX(email, '@', 1)='%s')", $dbSocket->escapeSimple($username));
+    }
+    if (!empty($email)) {
+        $where_clauses[] = sprintf("email='%s'", $dbSocket->escapeSimple($email));
+    }
+    if (!empty($email_prefix)) {
+        $where_clauses[] = sprintf("username='%s'", $dbSocket->escapeSimple($email_prefix));
+        $where_clauses[] = sprintf("(email != '' AND SUBSTRING_INDEX(email, '@', 1)='%s')", $dbSocket->escapeSimple($email_prefix));
+    }
+
+    if (!empty($where_clauses)) {
+        $sql = sprintf("SELECT username, email FROM %s WHERE %s LIMIT 1",
+                       $userinfo_tbl, implode(' OR ', $where_clauses));
+        $res = $dbSocket->query($sql);
+        $logDebugSQL .= "$sql;\n";
+        if ($res && !DB::isError($res) && $res->numRows() > 0) {
+            $row = $res->fetchRow();
+            $matched_user = $row[0];
+            $matched_email = $row[1] ?? '';
+            $matched_by = 'userinfo';
+            if (!empty($email) && strtolower($matched_email) === strtolower($email)) {
+                $matched_by = 'email';
+            } else if (!empty($username) && strtolower($matched_user) === strtolower($username)) {
+                $matched_by = 'username';
+            } else {
+                $matched_by = 'email_prefix';
+            }
+            return array('username' => $matched_user, 'email' => $matched_email, 'matched_by' => $matched_by);
+        }
+    }
+
+    return false;
+}
+
 // give an open $dbSocket and a $groupname,
 // returns true if the provided groupname is found
 // in the radgroupcheck and/or radgroupreply tables

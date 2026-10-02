@@ -177,15 +177,19 @@
 
             } else {
 
-                // we can proceed and check if username/mac address/pincode is already present in the radcheck table
-                $exists = user_exists($dbSocket, $username_to_check);
+                // we can proceed and check if username/mac address/pincode/email is already present
+                $existingUser = function_exists('find_existing_user')
+                              ? find_existing_user($dbSocket, $username_to_check, $email)
+                              : (user_exists($dbSocket, $username_to_check) ? array('username' => $username_to_check, 'matched_by' => 'username', 'email' => '') : false);
 
-                // we proceed only if username/mac address/pincode is not present
-                if ($exists) {
+                // we proceed only if not already present
+                if ($existingUser) {
                     // user exists
-                    $failureMsg = sprintf("record already found in database: <strong>%s</strong>",
-                                          htmlspecialchars($username_to_check, ENT_QUOTES, 'UTF-8'));
-                    $logAction .= "Failed adding new user already existing in database [$username_to_check] on page: ";
+                    $failureMsg = sprintf("Record already found in database: <strong>%s</strong> (matched by %s%s)",
+                                          htmlspecialchars($existingUser['username'], ENT_QUOTES, 'UTF-8'),
+                                          $existingUser['matched_by'],
+                                          !empty($existingUser['email']) ? ' [' . htmlspecialchars($existingUser['email'], ENT_QUOTES, 'UTF-8') . ']' : '');
+                    $logAction .= sprintf("Failed adding new user already existing in database [%s] on page: ", $existingUser['username']);
                 } else {
 
                     if ($authType == "userAuth") {
